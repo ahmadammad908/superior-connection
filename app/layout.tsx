@@ -1,6 +1,13 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Superior Connection",
@@ -14,8 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className="bg-white text-gray-900 antialiased">{children}</body>
+      <html lang="en" className={spaceGrotesk.variable}>
+        <body className="bg-white font-sans text-gray-900 antialiased">
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );

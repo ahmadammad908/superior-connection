@@ -10,11 +10,5 @@ const VotingPairSchema = new Schema(
   { timestamps: true }
 );
 
-// Only one active pair at a time
-VotingPairSchema.index(
-  { active: 1 },
-  { unique: true, partialFilterExpression: { active: true } }
-);
-
 export const VotingPair =
   models.VotingPair || model("VotingPair", VotingPairSchema);

@@ -46,6 +46,26 @@ function Spinner({ className = "h-4 w-4" }: { className?: string }) {
   return <Loader2 className={`${className} animate-spin`} />;
 }
 
+/* Pair row ke andar ek student (mobile par avatar upar, naam neeche) */
+function PairStudent({ s }: { s?: Student }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2 sm:text-left">
+      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-100 sm:h-8 sm:w-8">
+        {s?.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" />
+        )}
+      </div>
+      <span
+        className="w-full min-w-0 truncate text-xs font-medium sm:text-sm"
+        title={s?.name}
+      >
+        {s?.name || "?"}
+      </span>
+    </div>
+  );
+}
+
 export function AdminDashboard({
   initialStudents,
   initialPairs,
@@ -301,17 +321,21 @@ export function AdminDashboard({
   const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
   const activePairs = pairs.filter((p) => p.active).length;
 
+  // text-base on mobile: iPhone par input focus karne par zoom nahi hota
   const inputCls =
-    "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[#6C1C74] focus:ring-2 focus:ring-[#6C1C74]/15";
+    "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-[#6C1C74] focus:ring-2 focus:ring-[#6C1C74]/15 sm:text-sm";
   const primaryBtn =
-    "inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C1C74] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#6C1C74] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5";
+  const rowBtn =
+    "inline-flex min-w-[7rem] flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-60 sm:flex-none sm:py-1.5";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed right-4 top-4 z-50 flex max-w-sm items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${
+          role="status"
+          className={`fixed inset-x-4 top-4 z-50 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg sm:inset-x-auto sm:right-4 sm:max-w-sm ${
             toast.type === "success"
               ? "border-green-200 bg-green-50 text-green-700"
               : "border-red-200 bg-red-50 text-red-700"
@@ -322,8 +346,12 @@ export function AdminDashboard({
           ) : (
             <AlertCircle className="h-4 w-4 shrink-0" />
           )}
-          <span>{toast.text}</span>
-          <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100">
+          <span className="min-w-0 flex-1 break-words">{toast.text}</span>
+          <button
+            onClick={() => setToast(null)}
+            aria-label="Close"
+            className="ml-1 shrink-0 p-1 opacity-60 hover:opacity-100"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -331,24 +359,24 @@ export function AdminDashboard({
 
       {/* Confirm dialog */}
       {confirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
               <Trash2 className="h-5 w-5 text-red-600" />
             </div>
             <h3 className="text-base font-semibold">{confirm.title}</h3>
             <p className="mt-1 text-sm text-gray-500">{confirm.message}</p>
-            <div className="mt-6 flex justify-end gap-2">
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 onClick={() => setConfirm(null)}
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium hover:bg-gray-50 sm:w-auto sm:py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={runConfirm}
                 disabled={confirming}
-                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 sm:w-auto sm:py-2"
               >
                 {confirming && <Spinner />} {confirm.confirmLabel}
               </button>
@@ -358,7 +386,7 @@ export function AdminDashboard({
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[
           { label: "Students", value: students.length, icon: Users },
           { label: "Pairs", value: pairs.length, icon: Swords },
@@ -367,25 +395,29 @@ export function AdminDashboard({
         ].map(({ label, value, icon: Icon }) => (
           <div
             key={label}
-            className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+            className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:gap-3 sm:p-4"
           >
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10"
               style={{ backgroundColor: `${BRAND}15`, color: BRAND }}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <p className="text-xl font-bold leading-none">{value}</p>
-              <p className="mt-1 text-xs text-gray-500">{label}</p>
+            <div className="min-w-0">
+              <p className="truncate text-lg font-bold leading-none sm:text-xl">
+                {value}
+              </p>
+              <p className="mt-1 truncate text-[11px] text-gray-500 sm:text-xs">
+                {label}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Add Student */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="mb-4 text-base font-semibold">Add Student</h2>
           <form onSubmit={addStudent} className="space-y-3">
             <input
@@ -403,13 +435,19 @@ export function AdminDashboard({
             <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 px-3.5 py-3 text-sm text-gray-600 transition hover:border-[#6C1C74] hover:bg-purple-50/40">
               {preview ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={preview} alt="Preview" className="h-12 w-12 rounded-lg object-cover" />
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                   <Upload className="h-5 w-5 text-gray-400" />
                 </div>
               )}
-              <span className="truncate">{file ? file.name : "Choose photo"}</span>
+              <span className="min-w-0 flex-1 truncate">
+                {file ? file.name : "Choose photo"}
+              </span>
               <input
                 type="file"
                 accept="image/*"
@@ -432,7 +470,7 @@ export function AdminDashboard({
         </section>
 
         {/* Create Pair */}
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="mb-4 text-base font-semibold">Create Pair</h2>
           <form onSubmit={createPair} className="space-y-3">
             <select
@@ -475,22 +513,22 @@ export function AdminDashboard({
       </div>
 
       {/* Students list */}
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold">Students ({students.length})</h2>
           {refreshing && <Spinner className="h-4 w-4 text-[#6C1C74]" />}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {students.map((s) => {
             const deleting = isPending(`delete-student:${s._id}`);
             return (
               <div
                 key={s._id}
-                className={`flex items-center gap-3 rounded-xl border border-gray-100 p-3 transition ${
+                className={`flex min-w-0 items-center gap-3 rounded-xl border border-gray-100 p-3 transition ${
                   deleting ? "opacity-50" : "hover:shadow-sm"
                 }`}
               >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                   {s.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -499,7 +537,7 @@ export function AdminDashboard({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <ImageIcon className="m-auto h-5 w-5 text-gray-300" />
+                    <ImageIcon className="h-5 w-5 text-gray-300" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -511,7 +549,7 @@ export function AdminDashboard({
                 <button
                   onClick={() => askDeleteStudent(s._id)}
                   disabled={deleting}
-                  className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 disabled:opacity-60"
+                  className="shrink-0 rounded-lg p-2.5 text-red-500 transition hover:bg-red-50 disabled:opacity-60"
                   aria-label="Delete student"
                 >
                   {deleting ? <Spinner /> : <Trash2 className="h-4 w-4" />}
@@ -531,12 +569,12 @@ export function AdminDashboard({
       </section>
 
       {/* Pairs list */}
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold">Pairs ({pairs.length})</h2>
           {refreshing && <Spinner className="h-4 w-4 text-[#6C1C74]" />}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {pairs.map((p) => {
             const l = students.find((s) => s._id === p.leftId);
             const r = students.find((s) => s._id === p.rightId);
@@ -546,49 +584,49 @@ export function AdminDashboard({
             return (
               <div
                 key={p._id}
-                className={`flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 p-3 text-sm transition ${
+                className={`flex flex-col gap-3 rounded-xl border border-gray-100 p-3 text-sm transition sm:p-4 lg:flex-row lg:items-center lg:gap-4 ${
                   deleting ? "opacity-50" : ""
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  {[l, r].map((st, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      {i === 1 && <span className="text-xs text-gray-400">vs</span>}
-                      <div className="h-8 w-8 overflow-hidden rounded-full bg-gray-100">
-                        {st?.imageUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={st.imageUrl}
-                            alt={st.name}
-                            className="h-full w-full object-cover"
-                          />
-                        )}
-                      </div>
-                      <span className="font-medium">{st?.name || "?"}</span>
-                    </div>
-                  ))}
+                {/* Students: left vs right */}
+                <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 lg:max-w-md lg:flex-1">
+                  <PairStudent s={l} />
+                  <span className="text-xs font-semibold text-gray-400">vs</span>
+                  <PairStudent s={r} />
                 </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    p.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {p.active ? "Active" : "Inactive"}
-                </span>
-                <span className="text-xs text-gray-500">Round {p.round}</span>
-                <div className="ml-auto flex flex-wrap gap-2">
+
+                {/* Status + round */}
+                <div className="flex items-center justify-between gap-2 border-t border-gray-100 pt-3 lg:justify-start lg:border-0 lg:pt-0">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      p.active
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {p.active ? "Active" : "Inactive"}
+                  </span>
+                  <span className="text-xs text-gray-500">Round {p.round}</span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2 lg:ml-auto lg:flex-nowrap">
                   <button
                     onClick={() => togglePair(p._id, !p.active)}
                     disabled={toggling || deleting}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-60"
+                    className={`${rowBtn} border-gray-200 hover:bg-gray-50`}
                   >
-                    {toggling ? <Spinner className="h-3 w-3" /> : <Power className="h-3 w-3" />}
+                    {toggling ? (
+                      <Spinner className="h-3 w-3" />
+                    ) : (
+                      <Power className="h-3 w-3" />
+                    )}
                     {p.active ? "Deactivate" : "Activate"}
                   </button>
                   <button
                     onClick={() => askResetPair(p._id)}
                     disabled={resetting || deleting}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-60"
+                    className={`${rowBtn} border-gray-200 hover:bg-gray-50`}
                   >
                     {resetting ? (
                       <Spinner className="h-3 w-3" />
@@ -600,9 +638,13 @@ export function AdminDashboard({
                   <button
                     onClick={() => askDeletePair(p._id)}
                     disabled={deleting}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                    className={`${rowBtn} border-red-200 text-red-600 hover:bg-red-50`}
                   >
-                    {deleting ? <Spinner className="h-3 w-3" /> : <Trash2 className="h-3 w-3" />}
+                    {deleting ? (
+                      <Spinner className="h-3 w-3" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
                     Delete
                   </button>
                 </div>
@@ -615,7 +657,7 @@ export function AdminDashboard({
           {pairs.length === 0 &&
             refreshing &&
             [0, 1].map((i) => (
-              <div key={i} className="h-14 animate-pulse rounded-xl bg-gray-100" />
+              <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-100" />
             ))}
         </div>
       </section>

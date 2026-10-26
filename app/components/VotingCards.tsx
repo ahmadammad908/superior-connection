@@ -1,21 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 import {
   Loader2,
   CheckCircle2,
   AlertCircle,
   ArrowRight,
+  SkipForward,
   Vote,
   Trophy,
-  LogIn,
   UserPlus,
   WifiOff,
   ServerCrash,
   Check,
   Hourglass,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { StudentCard } from "./StudentCard";
 import { VotingSkeleton } from "../components/VotingSkeleton";
@@ -38,10 +39,97 @@ export type Pair = {
 
 type Side = "left" | "right";
 type Status = "idle" | "voted" | "already";
-type ErrorKind = "auth" | "inactive" | "network" | "server" | "generic";
+type ErrorKind = "inactive" | "network" | "server" | "generic";
 type ErrorInfo = { kind: ErrorKind; message: string };
 
-const BRAND = "#6C1C74";
+const TOAST_MS = 5000;
+
+/* ---------- Toast: sign up to vote ---------- */
+
+function AuthToast({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, TOAST_MS);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="pointer-events-none fixed inset-x-0 top-20 z-[60] flex justify-center px-4 sm:top-24"
+    >
+      <style>{`
+        @keyframes auth-toast-in {
+          from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes auth-toast-bar {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+        .auth-toast { animation: auth-toast-in 0.25s ease-out; }
+        .auth-toast-bar { animation: auth-toast-bar ${TOAST_MS}ms linear forwards; }
+        @media (prefers-reduced-motion: reduce) {
+          .auth-toast { animation: none; }
+        }
+      `}</style>
+
+      <div className="auth-toast pointer-events-auto relative w-full max-w-sm overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-xl shadow-purple-200/60">
+        <div className="flex items-start gap-3 p-3.5 pr-10">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6C1C74] to-purple-500 text-white shadow-md shadow-purple-200">
+            <UserPlus className="h-4 w-4" />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-gray-900">
+              Please sign up to vote
+            </p>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Sign up or sign in to cast your vote.
+            </p>
+
+            <div className="mt-2.5 flex gap-2">
+              <SignUpButton mode="modal">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-full bg-[#6C1C74] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-90"
+                >
+                  Sign up
+                </button>
+              </SignUpButton>
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-full border border-[#6C1C74]/30 px-4 py-1.5 text-xs font-semibold text-[#6C1C74] transition hover:bg-purple-50"
+                >
+                  Sign in
+                </button>
+              </SignInButton>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-2 top-2 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Auto-close progress bar */}
+        <div className="h-1 w-full bg-purple-50">
+          <div className="auth-toast-bar h-full bg-[#6C1C74]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Vote stats ---------- */
 
 function VoteStats({ votes, other }: { votes: number; other: number }) {
   const total = votes + other;
@@ -94,33 +182,9 @@ function VoteStats({ votes, other }: { votes: number; other: number }) {
   );
 }
 
-function ErrorBanner({ error }: { error: ErrorInfo }) {
-  if (error.kind === "auth") {
-    return (
-      <div className="w-full max-w-md rounded-3xl border border-purple-100 bg-white p-5 text-center shadow-lg shadow-purple-100/60 sm:p-6">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-50">
-          <LogIn className="h-6 w-6" style={{ color: BRAND }} />
-        </div>
-        <h3 className="text-lg font-semibold">Sign up to vote</h3>
-        <p className="mt-1 text-sm text-gray-500">{error.message}</p>
-        <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-          <Link
-            href="/sign-up"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#6C1C74] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-200 transition hover:opacity-90"
-          >
-            <UserPlus className="h-4 w-4" /> Sign up
-          </Link>
-          <Link
-            href="/sign-in"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#6C1C74] px-6 py-2.5 text-sm font-semibold text-[#6C1C74] transition hover:bg-purple-50"
-          >
-            <LogIn className="h-4 w-4" /> Sign in
-          </Link>
-        </div>
-      </div>
-    );
-  }
+/* ---------- Error banner ---------- */
 
+function ErrorBanner({ error }: { error: ErrorInfo }) {
   const Icon =
     error.kind === "network" ? WifiOff : error.kind === "server" ? ServerCrash : AlertCircle;
 
@@ -132,6 +196,8 @@ function ErrorBanner({ error }: { error: ErrorInfo }) {
   );
 }
 
+/* ---------- Main ---------- */
+
 export function VotingCards({
   initialPair,
   initialVotedCount = 0,
@@ -139,6 +205,8 @@ export function VotingCards({
   initialPair: Pair | null;
   initialVotedCount?: number;
 }) {
+  const { isLoaded, isSignedIn } = useAuth();
+
   const [pair, setPair] = useState<Pair | null>(initialPair);
   const [counts, setCounts] = useState<Counts>(
     initialPair?.counts ?? { left: 0, right: 0 }
@@ -149,13 +217,29 @@ export function VotingCards({
   const [fetchingNext, setFetchingNext] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<ErrorInfo | null>(null);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  async function fetchNextPair() {
+  // authToast = timestamp; naya timestamp = toast dobara shuru (timer reset)
+  const [authToast, setAuthToast] = useState<number | null>(null);
+  const showAuthToast = () => setAuthToast(Date.now());
+  const closeAuthToast = useCallback(() => setAuthToast(null), []);
+
+  // skipCurrent = true -> maujooda pair ko skip list mein daal ke agli pair lao
+  async function fetchNextPair(skipCurrent = false) {
     setLoading(true);
     setFetchingNext(true);
     setError(null);
+    setNotice(null);
+
+    const ids =
+      skipCurrent && pair && !skipped.includes(pair._id)
+        ? [...skipped, pair._id]
+        : skipped;
+
     try {
-      const res = await fetch("/api/pairs/next", { cache: "no-store" });
+      const qs = ids.length ? `?skip=${ids.join(",")}` : "";
+      const res = await fetch(`/api/pairs/next${qs}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError({
@@ -164,6 +248,15 @@ export function VotingCards({
         });
         return;
       }
+
+      if (data.recycled) {
+        // Saari pairs dekh li, list reset karo
+        setSkipped([]);
+        setNotice("You've gone through all the pairs, so we're starting over.");
+      } else {
+        setSkipped(ids);
+      }
+
       setPair(data.pair || null);
       setCounts(data.pair?.counts ?? { left: 0, right: 0 });
       if (typeof data.votedCount === "number") setVotedCount(data.votedCount);
@@ -182,6 +275,14 @@ export function VotingCards({
 
   async function handleVote(side: Side) {
     if (!pair || loading || status !== "idle") return;
+
+    // Login nahi hai -> server ko bulaye bina toast dikhao
+    if (isLoaded && !isSignedIn) {
+      setError(null);
+      showAuthToast();
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -204,11 +305,9 @@ export function VotingCards({
         return;
       }
 
+      // Backup: server ne login nahi mana
       if (res.status === 401 || data.code === "UNAUTHENTICATED") {
-        setError({
-          kind: "auth",
-          message: "Please sign up or sign in first to vote.",
-        });
+        showAuthToast();
         return;
       }
 
@@ -247,6 +346,7 @@ export function VotingCards({
     }
   }
 
+  // Empty state ke liye simple counter
   const counter = (
     <div className="mb-6 flex justify-center sm:mb-8">
       <span className="inline-flex items-center gap-2 rounded-full border border-purple-100 bg-white px-4 py-1.5 text-xs font-medium text-[#6C1C74] shadow-sm sm:px-5 sm:py-2 sm:text-sm">
@@ -302,7 +402,7 @@ export function VotingCards({
 
             {/* Refresh button */}
             <button
-              onClick={fetchNextPair}
+              onClick={() => fetchNextPair()}
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-full bg-[#6C1C74] px-7 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5 hover:opacity-95 disabled:translate-y-0 disabled:opacity-60"
             >
@@ -325,7 +425,7 @@ export function VotingCards({
     );
   }
 
-  // ---------- Loading state: "Next pair" dabane ke baad ----------
+  // ---------- Loading state: next / skip ke baad ----------
   if (fetchingNext) {
     return <VotingSkeleton label="Loading next pair…" />;
   }
@@ -333,6 +433,7 @@ export function VotingCards({
   // ---------- Main voting UI ----------
   const locked = loading || status !== "idle";
   const showNext = status !== "idle" || error?.kind === "inactive";
+  const showSkip = !showNext; // vote se pehle skip, vote ke baad "Next pair"
 
   const sides: { side: Side; student: Student; votes: number; other: number }[] = [
     { side: "left", student: pair.leftId, votes: counts.left, other: counts.right },
@@ -341,7 +442,55 @@ export function VotingCards({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-1 sm:px-0">
-      {counter}
+      {authToast !== null && (
+        <AuthToast key={authToast} onClose={closeAuthToast} />
+      )}
+
+      {/* Top bar: counter + skip / next (hamesha nazar aata hai) */}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="inline-flex min-w-0 items-center gap-2 rounded-full border border-purple-100 bg-white px-3 py-1.5 text-xs font-medium text-[#6C1C74] shadow-sm sm:px-5 sm:py-2 sm:text-sm">
+          <Vote className="h-4 w-4 shrink-0" />
+          <span className="truncate sm:hidden">{votedCount} voted</span>
+          <span className="hidden truncate sm:inline">
+            You've voted on {votedCount} {votedCount === 1 ? "pair" : "pairs"}
+          </span>
+        </span>
+
+        {showSkip ? (
+          <button
+            onClick={() => fetchNextPair(true)}
+            disabled={loading}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#6C1C74]/30 bg-white px-4 py-1.5 text-xs font-semibold text-[#6C1C74] shadow-sm transition hover:-translate-y-0.5 hover:border-[#6C1C74] hover:bg-purple-50 disabled:translate-y-0 disabled:opacity-50 sm:px-5 sm:py-2 sm:text-sm"
+          >
+            <SkipForward className="h-4 w-4" />
+            Skip pair
+          </button>
+        ) : (
+          <button
+            onClick={() => fetchNextPair()}
+            disabled={loading}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#6C1C74] px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-purple-200 transition hover:-translate-y-0.5 hover:opacity-95 disabled:translate-y-0 disabled:opacity-50 sm:px-5 sm:py-2 sm:text-sm"
+          >
+            Next pair
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {showSkip && (
+        <p className="mb-5 text-center text-xs text-gray-500 sm:mb-8">
+          Pick one, or skip if you can't decide.
+        </p>
+      )}
+      {!showSkip && <div className="mb-5 sm:mb-8" />}
+
+      {notice && (
+        <div className="mb-5 flex justify-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-purple-100 bg-purple-50 px-4 py-1.5 text-xs font-medium text-purple-700">
+            <RefreshCw className="h-3.5 w-3.5" /> {notice}
+          </span>
+        </div>
+      )}
 
       {/* Always two columns, on mobile too */}
       <div
@@ -402,9 +551,10 @@ export function VotingCards({
 
         {error && <ErrorBanner error={error} />}
 
+        {/* Vote ke baad: neeche bhi Next pair */}
         {showNext && (
           <button
-            onClick={fetchNextPair}
+            onClick={() => fetchNextPair()}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-full bg-[#6C1C74] px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5 hover:opacity-95 disabled:translate-y-0 disabled:opacity-50"
           >

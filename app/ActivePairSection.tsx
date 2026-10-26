@@ -23,11 +23,15 @@ export async function ActivePairSection() {
     }
   }
 
-  const pair: any = await VotingPair.findOne(filter)
+  // Kuch pairs lo aur wo pehli chuno jiske dono students maujood hon
+  const candidates: any[] = await VotingPair.find(filter)
     .sort({ createdAt: 1 })
+    .limit(10)
     .populate("leftId")
     .populate("rightId")
     .lean();
+
+  const pair = candidates.find((p) => p.leftId && p.rightId);
 
   let initialPair = null;
   if (pair) {

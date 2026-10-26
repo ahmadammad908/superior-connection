@@ -3,11 +3,21 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ShieldCheck, Info, FileText, LogIn } from "lucide-react";
+import {
+  Menu,
+  X,
+  ShieldCheck,
+  Info,
+  FileText,
+  LogIn,
+  Trophy,
+} from "lucide-react";
 import { SignInButton, Show } from "@clerk/nextjs";
 
 const itemClass =
   "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-[#4B5563] transition hover:bg-[#6C1C74]/5 hover:text-[#6C1C74]";
+
+const activeClass = "bg-[#6C1C74]/10 font-semibold text-[#6C1C74]";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -42,6 +52,8 @@ export function MobileMenu() {
     };
   }, [open]);
 
+  const isLeaderboard = pathname?.startsWith("/leaderboard");
+
   return (
     <div ref={ref} className="relative md:hidden">
       <button
@@ -58,6 +70,17 @@ export function MobileMenu() {
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-3 w-60 overflow-hidden rounded-2xl border border-[#6C1C74]/10 bg-white p-2 shadow-xl shadow-[#6C1C74]/10">
+          <Link
+            href="/leaderboard"
+            onClick={() => setOpen(false)}
+            className={`${itemClass} ${isLeaderboard ? activeClass : ""}`}
+          >
+            <Trophy className="h-4 w-4 text-[#6C1C74]" />
+            Leaderboard
+          </Link>
+
+          <div className="my-2 h-px bg-[#6C1C74]/10" />
+
           <Link href="/about" onClick={() => setOpen(false)} className={itemClass}>
             <Info className="h-4 w-4 text-[#6C1C74]" />
             About Us

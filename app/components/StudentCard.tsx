@@ -12,6 +12,21 @@ type Props = {
   onVote: (side: "left" | "right") => void;
 };
 
+function DeptChip({ text, tone }: { text: string; tone: string }) {
+  return (
+    <span
+      className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:gap-1.5 sm:px-3 sm:py-1 sm:text-xs ${tone}`}
+    >
+      <GraduationCap className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+      <span className="truncate">{text}</span>
+    </span>
+  );
+}
+
+const SOFT_TONE =
+  "bg-gradient-to-r from-purple-50 to-fuchsia-50 text-[#6C1C74] ring-1 ring-purple-100";
+const GLASS_TONE = "bg-white/20 text-white ring-1 ring-white/30 backdrop-blur";
+
 export function StudentCard({ student, side, disabled, onVote }: Props) {
   const firstName = student.name.split(" ")[0];
 
@@ -39,19 +54,21 @@ export function StudentCard({ student, side, disabled, onVote }: Props) {
             loading="lazy"
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
-          {student.department && (
-            <span className="absolute left-2 top-2 inline-flex max-w-[85%] items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-[#6C1C74] shadow-sm backdrop-blur sm:left-3 sm:top-3 sm:gap-1.5 sm:px-3 sm:py-1 sm:text-xs">
-              <GraduationCap className="hidden h-3.5 w-3.5 shrink-0 sm:block" />
-              <span className="truncate">{student.department}</span>
-            </span>
-          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
         </div>
 
-        <div className="p-2.5 sm:p-4">
+        <div className="p-2.5 text-center sm:p-4">
           <h3 className="truncate text-sm font-bold tracking-tight text-gray-900 sm:text-lg">
             {student.name}
           </h3>
+
+          {/* Department: naam ke neeche. min-h se dono cards ke buttons barabar rehte hain */}
+          <div className="mt-1.5 flex min-h-[20px] justify-center sm:mt-2 sm:min-h-[26px]">
+            {student.department && (
+              <DeptChip text={student.department} tone={SOFT_TONE} />
+            )}
+          </div>
+
           <div className="mt-2.5 sm:mt-3.5">
             {voteBtn(
               "bg-[#6C1C74] text-white shadow-md shadow-purple-200 hover:opacity-90"
@@ -73,18 +90,19 @@ export function StudentCard({ student, side, disabled, onVote }: Props) {
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
 
-        {student.department && (
-          <span className="absolute right-2 top-2 max-w-[80%] truncate rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-md sm:right-3 sm:top-3 sm:px-3 sm:py-1 sm:text-xs">
-            {student.department}
-          </span>
-        )}
-
-        <div className="absolute inset-x-2 bottom-2 rounded-xl border border-white/20 bg-white/15 p-2.5 backdrop-blur-xl sm:inset-x-3 sm:bottom-3 sm:rounded-2xl sm:p-4">
+        <div className="absolute inset-x-2 bottom-2 rounded-xl border border-white/20 bg-white/15 p-2.5 text-center backdrop-blur-xl sm:inset-x-3 sm:bottom-3 sm:rounded-2xl sm:p-4">
           <h3 className="truncate text-sm font-bold text-white drop-shadow sm:text-lg">
             {student.name}
           </h3>
+
+          <div className="mt-1.5 flex min-h-[20px] justify-center sm:mt-2 sm:min-h-[26px]">
+            {student.department && (
+              <DeptChip text={student.department} tone={GLASS_TONE} />
+            )}
+          </div>
+
           <div className="mt-2 sm:mt-3">
             {voteBtn("bg-white text-[#6C1C74] shadow-lg hover:bg-purple-50")}
           </div>
@@ -110,13 +128,13 @@ export function StudentCard({ student, side, disabled, onVote }: Props) {
         <h3 className="truncate text-sm font-bold tracking-tight text-gray-900 sm:text-lg">
           {student.name}
         </h3>
-        {student.department ? (
-          <span className="mt-1.5 inline-block max-w-full truncate rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-[#6C1C74] sm:px-3 sm:py-1 sm:text-xs">
-            {student.department}
-          </span>
-        ) : (
-          <span className="mt-1.5 inline-block h-5" />
-        )}
+
+        <div className="mt-1.5 flex min-h-[20px] justify-center sm:mt-2 sm:min-h-[26px]">
+          {student.department && (
+            <DeptChip text={student.department} tone={SOFT_TONE} />
+          )}
+        </div>
+
         <div className="mt-3 sm:mt-4">
           {voteBtn(
             "border-2 border-[#6C1C74] text-[#6C1C74] hover:bg-[#6C1C74] hover:text-white"
