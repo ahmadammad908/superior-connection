@@ -1,7 +1,7 @@
 import { Trophy } from "lucide-react";
 import { SiteHeader } from "../components/SiteHeader";
 import { LeaderboardView } from "./LeaderboardView";
-
+import Footer from "../components/Footer";
 export const metadata = { title: "Leaderboard" };
 
 export default function LeaderboardPage() {
@@ -23,7 +23,9 @@ export default function LeaderboardPage() {
         </div>
 
         <LeaderboardView />
+        
       </main>
+      <Footer />
     </div>
   );
 }

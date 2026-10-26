@@ -1,8 +1,12 @@
 import { Suspense } from "react";
 import { SignUp } from "@clerk/nextjs";
+import { SiteHeader } from "@/app/components/SiteHeader";
+import Footer from "@/app/components/Footer";
 
 export default function Page() {
   return (
+    <>
+    <SiteHeader />
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-white">
       <Suspense
         fallback={
@@ -12,5 +16,7 @@ export default function Page() {
         <SignUp />
       </Suspense>
     </main>
+    <Footer />
+    </>
   );
 }

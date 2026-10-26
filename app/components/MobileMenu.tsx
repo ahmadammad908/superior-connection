@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -19,40 +20,74 @@ const itemClass =
 
 const activeClass = "bg-[#6C1C74]/10 font-semibold text-[#6C1C74]";
 
+function MobileMenuFallback() {
+  return (
+    <div className="relative md:hidden">
+      <button
+        type="button"
+        aria-label="Open menu"
+        disabled
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-[#6C1C74]/20 bg-white text-[#6C1C74] shadow-sm"
+      >
+        <Menu className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 export function MobileMenu() {
+  return (
+    <Suspense fallback={<MobileMenuFallback />}>
+      <MobileMenuContent />
+    </Suspense>
+  );
+}
+
+function MobileMenuContent() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Page change par menu band
+  // Close the menu whenever the route changes.
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // Bahar tap / Escape par menu band
+  // Close on outside click or Escape.
   useEffect(() => {
     if (!open) return;
 
-    const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
     };
 
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
 
-  const isLeaderboard = pathname?.startsWith("/leaderboard");
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname?.startsWith(`${href}/`);
+  };
+
+  const getLinkClass = (href: string) =>
+    `${itemClass} ${isActive(href) ? activeClass : ""}`;
 
   return (
     <div ref={ref} className="relative md:hidden">
@@ -60,20 +95,32 @@ export function MobileMenu() {
         type="button"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        aria-controls="mobile-navigation-menu"
+        onClick={() => setOpen((previous) => !previous)}
         className={`flex h-9 w-9 items-center justify-center rounded-full border border-[#6C1C74]/20 text-[#6C1C74] shadow-sm transition active:scale-95 ${
-          open ? "bg-[#6C1C74]/10" : "bg-white hover:bg-[#6C1C74]/5"
+          open
+            ? "bg-[#6C1C74]/10"
+            : "bg-white hover:bg-[#6C1C74]/5"
         }`}
       >
-        {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        {open ? (
+          <X className="h-4 w-4" />
+        ) : (
+          <Menu className="h-4 w-4" />
+        )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-3 w-60 overflow-hidden rounded-2xl border border-[#6C1C74]/10 bg-white p-2 shadow-xl shadow-[#6C1C74]/10">
+        <div
+          id="mobile-navigation-menu"
+          className="absolute right-0 top-full z-50 mt-3 w-60 overflow-hidden rounded-2xl border border-[#6C1C74]/10 bg-white p-2 shadow-xl shadow-[#6C1C74]/10"
+        >
+          {/* Leaderboard */}
           <Link
             href="/leaderboard"
             onClick={() => setOpen(false)}
-            className={`${itemClass} ${isLeaderboard ? activeClass : ""}`}
+            aria-current={isActive("/leaderboard") ? "page" : undefined}
+            className={getLinkClass("/leaderboard")}
           >
             <Trophy className="h-4 w-4 text-[#6C1C74]" />
             Leaderboard
@@ -81,14 +128,24 @@ export function MobileMenu() {
 
           <div className="my-2 h-px bg-[#6C1C74]/10" />
 
-          <Link href="/about" onClick={() => setOpen(false)} className={itemClass}>
+          {/* Information */}
+          <Link
+            href="/about"
+            onClick={() => setOpen(false)}
+            aria-current={isActive("/about") ? "page" : undefined}
+            className={getLinkClass("/about")}
+          >
             <Info className="h-4 w-4 text-[#6C1C74]" />
             About Us
           </Link>
+
           <Link
             href="/privacy-policy"
             onClick={() => setOpen(false)}
-            className={itemClass}
+            aria-current={
+              isActive("/privacy-policy") ? "page" : undefined
+            }
+            className={getLinkClass("/privacy-policy")}
           >
             <FileText className="h-4 w-4 text-[#6C1C74]" />
             Privacy Policy
@@ -96,25 +153,30 @@ export function MobileMenu() {
 
           <div className="my-2 h-px bg-[#6C1C74]/10" />
 
-          <Link href="/admin" onClick={() => setOpen(false)} className={itemClass}>
+          {/* Admin */}
+          <Link
+            href="/admin"
+            onClick={() => setOpen(false)}
+            aria-current={isActive("/admin") ? "page" : undefined}
+            className={getLinkClass("/admin")}
+          >
             <ShieldCheck className="h-4 w-4 text-[#6C1C74]" />
             Admin
           </Link>
 
-          <Suspense fallback={null}>
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className={itemClass}
-                >
-                  <LogIn className="h-4 w-4 text-[#6C1C74]" />
-                  Sign In
-                </button>
-              </SignInButton>
-            </Show>
-          </Suspense>
+          {/* Sign In */}
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className={itemClass}
+              >
+                <LogIn className="h-4 w-4 text-[#6C1C74]" />
+                Sign In
+              </button>
+            </SignInButton>
+          </Show>
         </div>
       )}
     </div>

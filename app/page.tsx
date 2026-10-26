@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { ActivePairSection } from "./ActivePairSection";
 import { SiteHeader } from "../app/components/SiteHeader";
 import { VotingSkeleton } from "../app/components/VotingSkeleton";
-
+import Footer from "../app/components/Footer";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#6C1C74]/5 via-white to-white">
@@ -22,6 +22,7 @@ export default function HomePage() {
           <ActivePairSection />
         </Suspense>
       </main>
+      <Footer />
     </div>
   );
 }
