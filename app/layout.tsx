@@ -3,7 +3,10 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
+
 import { VotingTicker } from "./components/VotingTicker";
+import FallingLeavesEffect from "./components/FallingLeaves";
+
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
@@ -23,15 +26,17 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={spaceGrotesk.variable}>
-
         <body className="bg-white font-sans text-gray-900 antialiased">
-                  <VotingTicker />
+          <FallingLeavesEffect />
+
+          <VotingTicker />
 
           {children}
+
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
         </body>
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
-        )}
       </html>
     </ClerkProvider>
   );
