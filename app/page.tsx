@@ -4,7 +4,7 @@ import { SiteHeader } from "../app/components/SiteHeader";
 import { VotingSkeleton } from "../app/components/VotingSkeleton";
 import Footer from "../app/components/Footer";
 import WelcomePopup from "../app/components/WelcomePopup";
-import { Trophy, Crown, GraduationCap } from "lucide-react";
+import { Trophy, Crown, GraduationCap ,Heart} from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -21,17 +21,19 @@ export default function HomePage() {
             Keep it friendly, vote with a smile, and cheer for your campus.
           </p>
         </div> */}
-        <header className="text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#6C1C74] text-white shadow-lg shadow-purple-300">
-                    <Trophy className="h-8 w-8" />
-                  </div>
-                  <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
-                    Congratulations to our winners!
-                  </h1>
-                  <p className="mx-auto mt-3 max-w-md text-sm text-gray-600 sm:text-base">
-                    Voting is now closed. Thank you to everyone who voted.
-                  </p>
-                </header>
+       <header className="text-center">
+  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#6C1C74] text-white shadow-lg shadow-purple-300">
+    <Heart className="h-8 w-8" />
+  </div>
+  <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+    A Little Love for Our Teachers
+  </h1>
+  <p className="mx-auto mt-3 max-w-lg text-sm text-gray-600 sm:text-base">
+    Behind every success is a teacher who believed in us. Show your love for
+    the teachers who made a difference in your journey. Every teacher on our
+    campus is a star, listed here or not.
+  </p>
+</header>
         
 
         <Suspense fallback={<VotingSkeleton showCounter={false} />}>

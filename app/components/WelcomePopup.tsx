@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import logo from "../../public/super6.png";
-
-const INSTAGRAM_ID = "superior78667";
-const INSTAGRAM_URL =
-  "https://www.instagram.com/superior78667?exln=aG53YzYwd2hyY3l3&utm_source=qr";
+import Countdown from "./Countdown";
 
 export default function WelcomePopup() {
   const [open, setOpen] = useState(true);
@@ -56,35 +53,29 @@ export default function WelcomePopup() {
           </h2>
         </div>
 
+        <div className="shrink-0 px-6">
+          <Countdown />
+        </div>
+
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-4 text-center text-sm leading-relaxed text-[#4B5563] lg:space-y-2 lg:py-3">
           <p>
-            Thank you for being part of this journey! The voting is now{" "}
-            <strong className="text-[#6C1C74]">finished</strong>. It was just a{" "}
-            <strong>fun and friendly activity</strong> among university students.
+            Welcome! This is a{" "}
+            <strong className="text-[#6C1C74]">friendly appreciation</strong>{" "}
+            of some of our teachers. You have only{" "}
+            <strong className="text-[#6C1C74]">24 hours left</strong> to cast a
+            vote and say thank you to the teacher who inspired you.
           </p>
           <p>
-            Every girl featured here is{" "}
-            <strong className="text-[#6C1C74]">special and valued</strong>. A vote count
-            never defines anyone&apos;s worth, beauty, or talent.
+            Every teacher is{" "}
+            <strong className="text-[#6C1C74]">special and valued</strong>. A
+            vote count never defines a teacher&apos;s worth, hard work, or
+            dedication, and teachers who are not listed here are just as
+            respected.
           </p>
           <p>
-            Get ready for a <strong className="text-[#6C1C74]">new adventure</strong>{" "}
-            coming soon. Please wait a little, and always remember:{" "}
-            <strong className="text-[#6C1C74]">Superior Connection</strong> will give you
-            a full, safe adventure.
-          </p>
-          <p>
-            Have a question, a query, an idea, or even a confession? Feel free to
-            message us on Instagram{" "}
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-[#6C1C74] underline"
-            >
-              @{INSTAGRAM_ID}
-            </a>
-            . We&apos;d love to hear from you.
+            Have a question, a query, an idea, or some feedback? Please leave a{" "}
+            <strong className="text-[#6C1C74]">comment on this website</strong>{" "}
+            in the comment section below. We&apos;d love to hear from you.
           </p>
         </div>
 
@@ -93,7 +84,7 @@ export default function WelcomePopup() {
             onClick={close}
             className="w-full rounded-xl bg-[#6C1C74] py-3 text-sm font-semibold text-white transition hover:bg-[#561659] focus:outline-none focus:ring-2 focus:ring-[#6C1C74]/40"
           >
-            Got it, I&apos;ll wait
+            Let&apos;s vote 💜
           </button>
         </div>
       </div>

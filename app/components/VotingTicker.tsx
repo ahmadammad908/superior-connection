@@ -1,5 +1,34 @@
-const TICKER_TEXT = "🏁 Voting has ended — thank you for voting! We will be in touch with you soon.";
+"use client";
+
+import { useEffect, useState } from "react";
+import { VOTING_END } from "../lib/votingConfig";
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
 export function VotingTicker() {
+  // null rakha hai taake hydration mismatch na aaye
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const diff = now === null ? null : Math.max(0, VOTING_END - now);
+  const ended = diff === 0;
+
+  const time =
+    diff === null
+      ? "--:--:--"
+      : `${pad(Math.floor(diff / 3_600_000))}:${pad(
+          Math.floor((diff % 3_600_000) / 60_000)
+        )}:${pad(Math.floor((diff % 60_000) / 1000))}`;
+
+  const text = ended
+    ? "🏁 Voting has ended. Thank you for showing love to our teachers! 💜"
+    : `💜 Teacher appreciation voting is live! Voting closes in ${time}. Cast your vote now ⏳`;
+
   return (
     <>
       <style>{`
@@ -25,9 +54,9 @@ export function VotingTicker() {
               {[...Array(6)].map((_, i) => (
                 <span
                   key={i}
-                  className="mx-8 whitespace-nowrap text-sm font-semibold tracking-wide"
+                  className="mx-8 whitespace-nowrap text-sm font-semibold tabular-nums tracking-wide"
                 >
-                  {TICKER_TEXT}
+                  {text}
                 </span>
               ))}
             </div>
