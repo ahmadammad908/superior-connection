@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import logo from "../../public/super6.png";
-import Countdown from "./Countdown";
+
+const COMMENTS_ID = "comments";
 
 export default function WelcomePopup() {
   const [open, setOpen] = useState(true);
@@ -18,6 +19,19 @@ export default function WelcomePopup() {
   }, [open]);
 
   const close = () => setOpen(false);
+
+  const goToComments = () => {
+    setOpen(false);
+    // Popup band hone ke baad body scroll wapas enable hota hai, phir scroll karein
+    setTimeout(() => {
+      const el = document.getElementById(COMMENTS_ID);
+      if (el) {
+        const offset = 96; // zyada scroll ho to number barhayein, kam ho to ghatayein
+        const top = el.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+    }, 100);
+  };
 
   if (!open) return null;
 
@@ -53,17 +67,18 @@ export default function WelcomePopup() {
           </h2>
         </div>
 
-        <div className="shrink-0 px-6">
-          <Countdown />
-        </div>
+       
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-4 text-center text-sm leading-relaxed text-[#4B5563] lg:space-y-2 lg:py-3">
           <p>
-            Welcome! This is a{" "}
-            <strong className="text-[#6C1C74]">friendly appreciation</strong>{" "}
-            of some of our teachers. You have only{" "}
-            <strong className="text-[#6C1C74]">24 hours left</strong> to cast a
-            vote and say thank you to the teacher who inspired you.
+            Voting for the teachers has now{" "}
+            <strong className="text-[#6C1C74]">ended</strong>. Thank you to
+            everyone who cast a vote and showed appreciation to the teachers
+            who inspired them.
+          </p>
+          <p>
+            The <strong className="text-[#6C1C74]">boys&apos; voting</strong>{" "}
+            will start very soon, so stay with us!
           </p>
           <p>
             Every teacher is{" "}
@@ -73,18 +88,27 @@ export default function WelcomePopup() {
             respected.
           </p>
           <p>
-            Have a question, a query, an idea, or some feedback? Please leave a{" "}
-            <strong className="text-[#6C1C74]">comment on this website</strong>{" "}
-            in the comment section below. We&apos;d love to hear from you.
+            Have a question, a query, an idea, or some feedback? Click the
+            button below and{" "}
+            <strong className="text-[#6C1C74]">
+              leave a comment on this website
+            </strong>
+            . We&apos;d love to hear from you.
           </p>
         </div>
 
-        <div className="shrink-0 px-6 pb-5 pt-2">
+        <div className="shrink-0 space-y-2 px-6 pb-5 pt-2">
           <button
-            onClick={close}
+            onClick={goToComments}
             className="w-full rounded-xl bg-[#6C1C74] py-3 text-sm font-semibold text-white transition hover:bg-[#561659] focus:outline-none focus:ring-2 focus:ring-[#6C1C74]/40"
           >
-            Let&apos;s vote 💜
+            Leave a comment 💬
+          </button>
+          <button
+            onClick={close}
+            className="w-full rounded-xl border border-[#6C1C74]/30 bg-white py-3 text-sm font-semibold text-[#6C1C74] transition hover:bg-[#6C1C74]/5 focus:outline-none focus:ring-2 focus:ring-[#6C1C74]/40"
+          >
+            Close
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { Trophy } from "lucide-react";
 import { SiteHeader } from "../components/SiteHeader";
 import { LeaderboardView } from "./LeaderboardView";
+import BoysVotingSoon from "../components/BoysVotingSoon";
 import Footer from "../components/Footer";
 export const metadata = { title: "Leaderboard" };
 
@@ -18,12 +19,14 @@ export default function LeaderboardPage() {
             Leaderboard
           </h1>
           <p className="mt-2 text-sm text-[#4B5563]">
-            See who is leading and how many votes everyone has.
+            Teachers ki voting khatam ho chuki hai. Boys ki voting jald shuru
+            hogi.
           </p>
         </div>
 
-        <LeaderboardView />
-        
+        <BoysVotingSoon />
+
+        {/* <LeaderboardView /> */}
       </main>
       <Footer />
     </div>

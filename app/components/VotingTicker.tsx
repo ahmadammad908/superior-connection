@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { VOTING_END } from "../lib/votingConfig";
+
+// Boys' voting start date. Pakistan time (+05:00).
+const BOYS_VOTING_START = new Date("2026-11-17T00:00:00+05:00").getTime();
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -15,19 +17,17 @@ export function VotingTicker() {
     return () => clearInterval(id);
   }, []);
 
-  const diff = now === null ? null : Math.max(0, VOTING_END - now);
-  const ended = diff === 0;
+  const diff = now === null ? null : Math.max(0, BOYS_VOTING_START - now);
+  const started = diff === 0;
 
   const time =
     diff === null
-      ? "--:--:--"
-      : `${pad(Math.floor(diff / 3_600_000))}:${pad(
-          Math.floor((diff % 3_600_000) / 60_000)
-        )}:${pad(Math.floor((diff % 60_000) / 1000))}`;
-
-  const text = ended
-    ? "🏁 Voting has ended. Thank you for showing love to our teachers! 💜"
-    : `💜 Teacher appreciation voting is live! Voting closes in ${time}. Cast your vote now ⏳`;
+      ? "--d --h --m --s"
+      : `${Math.floor(diff / 86_400_000)}d ${pad(
+          Math.floor((diff % 86_400_000) / 3_600_000)
+        )}h ${pad(Math.floor((diff % 3_600_000) / 60_000))}m ${pad(
+          Math.floor((diff % 60_000) / 1000)
+        )}s`;
 
   return (
     <>
@@ -54,9 +54,18 @@ export function VotingTicker() {
               {[...Array(6)].map((_, i) => (
                 <span
                   key={i}
-                  className="mx-8 whitespace-nowrap text-sm font-semibold tabular-nums tracking-wide"
+                  className="mx-6 flex items-center gap-2 whitespace-nowrap text-sm font-semibold tracking-wide"
                 >
-                  {text}
+                  {started ? (
+                    <>🎉 Boys&apos; Voting is Live!</>
+                  ) : (
+                    <>
+                      <span>💜 Boys&apos; Voting Starts In</span>
+                      <span className="rounded-full bg-white/20 px-3 py-0.5 font-bold tabular-nums">
+                        ⏳ {time}
+                      </span>
+                    </>
+                  )}
                 </span>
               ))}
             </div>
