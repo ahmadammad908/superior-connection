@@ -1,0 +1,22 @@
+import { Suspense } from "react";
+import { SignUp } from "@clerk/nextjs";
+import { SiteHeader } from "@/app/components/SiteHeader";
+import Footer from "@/app/components/Footer";
+
+export default function Page() {
+  return (
+    <>
+    <SiteHeader />
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-white">
+      <Suspense
+        fallback={
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[#6C1C74]" />
+        }
+      >
+        <SignUp />
+      </Suspense>
+    </main>
+    <Footer />
+    </>
+  );
+}
