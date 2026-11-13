@@ -18,6 +18,7 @@ import {
   Hourglass,
   RefreshCw,
   X,
+  Maximize2,
 } from "lucide-react";
 import { StudentCard } from "./StudentCard";
 import { VotingSkeleton } from "../components/VotingSkeleton";
@@ -44,6 +45,80 @@ type ErrorKind = "inactive" | "network" | "server" | "generic";
 type ErrorInfo = { kind: ErrorKind; message: string };
 
 const TOAST_MS = 5000;
+
+/* ---------- Image lightbox (zoom view) ---------- */
+
+function ImageLightbox({
+  student,
+  onClose,
+}: {
+  student: Student;
+  onClose: () => void;
+}) {
+  // Esc se band + background scroll lock
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${student.name} photo`}
+      onClick={onClose}
+      className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+    >
+      <style>{`
+        @keyframes lightbox-in {
+          from { opacity: 0; transform: scale(0.94); }
+          to { opacity: 1; transform: none; }
+        }
+        .lightbox-img { animation: lightbox-in 0.2s ease-out; }
+        @media (prefers-reduced-motion: reduce) {
+          .lightbox-img { animation: none; }
+        }
+      `}</style>
+
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 z-10 rounded-full bg-white/15 p-2 text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/60"
+      >
+        <X className="h-6 w-6" />
+      </button>
+
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={student.imageUrl}
+        alt={student.name}
+        onClick={(e) => e.stopPropagation()}
+        className="lightbox-img max-h-[80vh] max-w-full rounded-2xl object-contain shadow-2xl"
+      />
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="mt-4 text-center text-white"
+      >
+        <p className="text-base font-semibold sm:text-lg">{student.name}</p>
+        {student.department && (
+          <p className="text-xs text-white/70 sm:text-sm">
+            {student.department}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ---------- Toast: sign up to vote ---------- */
 
@@ -221,6 +296,10 @@ export function VotingCards({
   const [skipped, setSkipped] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // Zoom (lightbox) mein jis student ki image khuli hai
+  const [zoomStudent, setZoomStudent] = useState<Student | null>(null);
+  const closeZoom = useCallback(() => setZoomStudent(null), []);
+
   // authToast = timestamp; naya timestamp = toast dobara shuru (timer reset)
   const [authToast, setAuthToast] = useState<number | null>(null);
   const showAuthToast = () => setAuthToast(Date.now());
@@ -232,6 +311,7 @@ export function VotingCards({
     setFetchingNext(true);
     setError(null);
     setNotice(null);
+    setZoomStudent(null);
 
     const ids =
       skipCurrent && pair && !skipped.includes(pair._id)
@@ -448,6 +528,10 @@ export function VotingCards({
         <AuthToast key={authToast} onClose={closeAuthToast} />
       )}
 
+      {zoomStudent && (
+        <ImageLightbox student={zoomStudent} onClose={closeZoom} />
+      )}
+
       {/* Top bar: counter + skip / next (hamesha nazar aata hai) */}
       <div className="mb-2 flex items-center justify-between gap-3">
         <span className="inline-flex min-w-0 items-center gap-2 rounded-full border border-purple-100 bg-white px-3 py-1.5 text-xs font-medium text-[#6C1C74] shadow-sm sm:px-5 sm:py-2 sm:text-sm">
@@ -503,7 +587,16 @@ export function VotingCards({
         {sides.map(({ side, student, votes, other }) => (
           <div
             key={side}
-            className={`relative min-w-0 rounded-2xl p-0 transition sm:rounded-3xl sm:p-3 ${
+            // Image par click -> zoom (vote nahi lagega). Capture phase mein pakadte hain
+            // taake StudentCard ka apna click handler na chale.
+            onClickCapture={(e) => {
+              if ((e.target as HTMLElement).closest("img")) {
+                e.preventDefault();
+                e.stopPropagation();
+                setZoomStudent(student);
+              }
+            }}
+            className={`relative min-w-0 rounded-2xl p-0 transition sm:rounded-3xl sm:p-3 [&_img]:cursor-zoom-in ${
               picked === side
                 ? "bg-purple-50/70 ring-2 ring-[#6C1C74]"
                 : "bg-transparent ring-1 ring-transparent"
@@ -514,6 +607,20 @@ export function VotingCards({
                 <Check className="h-3 w-3" /> Your pick
               </span>
             )}
+
+            {/* Zoom button: image ke top-right corner par */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoomStudent(student);
+              }}
+              aria-label={`View ${student.name} photo larger`}
+              className="absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition hover:bg-black/75 focus:outline-none focus:ring-2 focus:ring-white/70 sm:right-5 sm:top-5 sm:h-7 sm:w-7"
+            >
+              <Maximize2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            </button>
+
             <StudentCard
               student={student}
               side={side}
@@ -564,8 +671,6 @@ export function VotingCards({
           </button>
         )}
       </div>
-
-    
     </div>
   );
 }
