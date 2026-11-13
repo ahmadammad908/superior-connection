@@ -48,7 +48,7 @@ export default function Countdown() {
   const seconds = diff === null ? "--" : pad(Math.floor((diff % 60_000) / 1000));
 
   return (
-    <div className="rounded-2xl bg-gradient-to-b from-[#6C1C74]/10 to-transparent px-4 py-3 text-center">
+    <div className="rounded-2xl  px-4 py-3 text-center">
       <p className="mb-2 text-xs font-semibold text-[#6C1C74]">
         <span className="inline-block animate-pulse">⏳</span> Voting closes in
       </p>
