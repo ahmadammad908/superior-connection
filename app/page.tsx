@@ -20,7 +20,7 @@ export default function HomePage() {
           {/* Boys Voting Congratulations Message */}
           <div className="mb-6 mt-6 rounded-2xl border border-[#6C1C74]/20 bg-[#6C1C74]/5 px-6 py-6 text-center">
             <h2 className="text-2xl font-extrabold text-[#6C1C74] sm:text-3xl">
-              🎉 Congratulations, Boys! 🏆
+             Congratulations, Boys! 🏆
             </h2>
 
             <p className="mt-2 text-sm font-medium text-gray-700 sm:text-base">
