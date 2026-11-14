@@ -5,14 +5,12 @@ import { ActivePairSection } from "./ActivePairSection";
 import { SiteHeader } from "../app/components/SiteHeader";
 import { VotingSkeleton } from "../app/components/VotingSkeleton";
 import Footer from "../app/components/Footer";
-import WelcomePopup from "../app/components/WelcomePopup";
 import { Trophy, Crown, GraduationCap, Heart, ArrowRight } from "lucide-react";
 import Countdown from "./components/Countdown";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#6C1C74]/5 via-white to-white">
-      <WelcomePopup />
       <SiteHeader />
 
       <main className="mx-auto max-w-5xl px-6 pb-24 pt-12">

@@ -145,8 +145,8 @@ function PairItem({ p }: { p: PairRow }) {
             Live
           </span>
         ) : (
-          <span className="rounded-full bg-green-200 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">
-            Live 
+          <span className="rounded-full bg-red-700 px-2.5 py-0.5 text-[11px] font-semibold text-white">
+            ended
           </span>
         )}
       </div>
@@ -176,7 +176,7 @@ function PairItem({ p }: { p: PairRow }) {
             : p.winner === "tie"
             ? "Tied"
             : `${p.winner === "left" ? p.left.name : p.right.name} ${
-                p.active ? "is leading" : "winning"
+                p.active ? "is leading" : "won"
               }`}
         </span>
         <span className="text-fuchsia-500">{rightPct}%</span>

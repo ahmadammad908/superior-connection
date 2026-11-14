@@ -113,6 +113,66 @@ function Confetti({ delay }: { delay: number }) {
   );
 }
 
+/* Image par click karne par bada (zoom) view */
+function ImageZoom({
+  ranked,
+  onClose,
+}: {
+  ranked: Ranked;
+  onClose: () => void;
+}) {
+  const { student, rank, tie } = ranked;
+  const m = MEDAL[rank] ?? MEDAL_DEFAULT;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${student.name} photo`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+      className="wp-zoom-bg absolute inset-0 z-[120] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="Close photo"
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="wp-zoom flex max-h-full w-full max-w-md flex-col items-center"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={student.imageUrl}
+          alt={student.name}
+          className={`max-h-[70vh] w-full rounded-3xl bg-purple-950 object-contain shadow-2xl ring-4 ${m.ring}`}
+        />
+        <div className="mt-4 text-center">
+          <p className="text-lg font-bold text-white">{student.name}</p>
+          {student.department && (
+            <p className="text-sm text-fuchsia-100/70">{student.department}</p>
+          )}
+          <p className="mt-1 text-sm font-semibold text-amber-200">
+            {student.votes.toLocaleString()}{" "}
+            {student.votes === 1 ? "vote" : "votes"}
+            {tie ? " · Co-winner" : ""}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CongratsPopup({
   winners,
   onClose,
@@ -121,18 +181,27 @@ function CongratsPopup({
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [zoomed, setZoomed] = useState<Ranked | null>(null);
 
   useEffect(() => {
     closeRef.current?.focus();
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
     };
-  }, [onClose]);
+  }, []);
+
+  // Esc: agar zoom khula ho to sirf zoom band ho, warna popup
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (zoomed) setZoomed(null);
+      else onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, zoomed]);
 
   const n = winners.length;
 
@@ -162,6 +231,8 @@ function CongratsPopup({
         @keyframes wp-crown     { 0% { opacity: 0; transform: translateY(-36px) rotate(-18deg) scale(.5); } 70% { opacity: 1; transform: translateY(3px) rotate(4deg) scale(1.1); } 100% { opacity: 1; transform: none; } }
         @keyframes wp-shock     { from { opacity: .8; transform: scale(.6); } to { opacity: 0; transform: scale(2.2); } }
         @keyframes wp-glow      { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes wp-zoom-bg   { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes wp-zoom-in   { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
         @keyframes wp-fall {
           0%   { opacity: 0; transform: translate3d(0,-8vh,0) rotate(0); }
           6%   { opacity: 1; }
@@ -175,12 +246,14 @@ function CongratsPopup({
         .wp-crown    { animation: wp-crown .8s cubic-bezier(.3,1.4,.5,1) both; }
         .wp-shock    { animation: wp-shock 1.3s ease-out both; }
         .wp-glow     { animation: wp-glow 1.2s ease-out both; }
+        .wp-zoom-bg  { animation: wp-zoom-bg .25s ease-out both; }
+        .wp-zoom     { animation: wp-zoom-in .35s cubic-bezier(.2,.9,.25,1) both; }
         .wp-confetti {
           position: absolute; top: 0; border-radius: 2px; background: var(--c);
           opacity: 0; animation: wp-fall 4s linear both;
         }
         @media (prefers-reduced-motion: reduce) {
-          .wp-dialog, .wp-up, .wp-block, .wp-land, .wp-crown { animation: none; }
+          .wp-dialog, .wp-up, .wp-block, .wp-land, .wp-crown, .wp-zoom-bg, .wp-zoom { animation: none; }
           .wp-fx, .wp-intro, .wp-shock, .wp-glow { display: none; }
         }
       `}</style>
@@ -259,18 +332,27 @@ function CongratsPopup({
                     {first && (
                       <span
                         aria-hidden
-                        className="wp-shock wp-fx absolute inset-0 rounded-full border-2 border-amber-300"
+                        className="wp-shock wp-fx pointer-events-none absolute inset-0 rounded-full border-2 border-amber-300"
                         style={{ animationDelay: `${d + 0.7}s` }}
                       />
                     )}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={w.student.imageUrl}
-                      alt={w.student.name}
-                      className={`rounded-full bg-purple-900 object-cover ring-4 ${m.ring} ${
-                        AVATAR[w.rank] ?? "h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
-                      }`}
-                    />
+
+                    {/* Click karne par image zoom hogi */}
+                    <button
+                      type="button"
+                      onClick={() => setZoomed(w)}
+                      aria-label={`View ${w.student.name} photo`}
+                      className="block cursor-zoom-in rounded-full transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={w.student.imageUrl}
+                        alt={w.student.name}
+                        className={`rounded-full bg-purple-900 object-cover ring-4 ${m.ring} ${
+                          AVATAR[w.rank] ?? "h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
+                        }`}
+                      />
+                    </button>
                   </div>
 
                   <p className="mt-3 w-full truncate text-center text-sm font-semibold text-white">
@@ -304,10 +386,11 @@ function CongratsPopup({
             );
           })}
         </ul>
-
       </div>
 
       <Confetti delay={tFirst + 0.3} />
+
+      {zoomed && <ImageZoom ranked={zoomed} onClose={() => setZoomed(null)} />}
     </div>
   );
 }
