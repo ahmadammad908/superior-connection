@@ -305,17 +305,6 @@ function CongratsPopup({
           })}
         </ul>
 
-        <div
-          className="wp-up relative z-10 mt-5 text-center"
-          style={{ animationDelay: `${tFirst + 1.4}s` }}
-        >
-          <Link
-            href={LEADERBOARD_PATH}
-            className="inline-block rounded-full bg-white px-7 py-2 text-sm font-semibold text-[#4a1252] transition hover:bg-fuchsia-50 active:scale-[0.98]"
-          >
-            See more results
-          </Link>
-        </div>
       </div>
 
       <Confetti delay={tFirst + 0.3} />
