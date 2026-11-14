@@ -281,6 +281,10 @@ function CongratsPopup({
                       {w.student.department}
                     </p>
                   )}
+                  <p className="mt-1 w-full truncate text-center text-xs font-semibold text-amber-200 sm:text-sm">
+                    {w.student.votes.toLocaleString()}{" "}
+                    {w.student.votes === 1 ? "vote" : "votes"}
+                  </p>
                   {w.tie && (
                     <p className="mt-0.5 text-[11px] font-medium text-amber-200/90">
                       Co-winner

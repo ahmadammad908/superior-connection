@@ -1,48 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { VOTING_END } from "./Countdown"; // apna sahi path likhein
-
-const pad = (n: number) => String(n).padStart(2, "0");
+import Link from "next/link";
+import { Trophy, ArrowRight } from "lucide-react";
 
 export function VotingTicker() {
-  // null rakha hai taake hydration mismatch na aaye
-  const [now, setNow] = useState<number | null>(null);
-
-  useEffect(() => {
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const diff = now === null ? null : Math.max(0, VOTING_END - now);
-  const ended = diff === 0;
-
-  const time =
-    diff === null
-      ? "--h --m --s"
-      : `${pad(Math.floor(diff / 3_600_000))}h ${pad(
-          Math.floor((diff % 3_600_000) / 60_000)
-        )}m ${pad(Math.floor((diff % 60_000) / 1000))}s`;
-
   return (
     <>
       <style>{`
         @keyframes ticker-scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
         }
+
         .ticker-track {
           display: flex;
           width: max-content;
           animation: ticker-scroll 25s linear infinite;
         }
+
         .ticker-wrap:hover .ticker-track {
           animation-play-state: paused;
         }
       `}</style>
 
-      {/* Fixed scrolling tape (har page par sabse upar) */}
+      {/* Fixed Scrolling Ticker */}
       <div className="ticker-wrap fixed left-0 right-0 top-0 z-[100] h-9 w-full overflow-hidden bg-[#6C1C74] text-white shadow-md">
         <div className="ticker-track h-full items-center">
           {[...Array(2)].map((_, groupIndex) => (
@@ -52,16 +37,7 @@ export function VotingTicker() {
                   key={i}
                   className="mx-6 flex items-center gap-2 whitespace-nowrap text-sm font-semibold tracking-wide"
                 >
-                  {ended ? (
-                    <>💜 Boys&apos; Voting has ended. Thank you for the love!</>
-                  ) : (
-                    <>
-                      <span>🔥 Boys&apos; Voting is Live! Time Left:</span>
-                      <span className="rounded-full bg-white/20 px-3 py-0.5 font-bold tabular-nums">
-                        ⏳ {time}
-                      </span>
-                    </>
-                  )}
+                  🏆 Boys&apos; Voting Has Ended! Congratulations, Winners! 💜
                 </span>
               ))}
             </div>
@@ -69,8 +45,20 @@ export function VotingTicker() {
         </div>
       </div>
 
-      {/* Spacer taake content tape ke peeche na chhupe */}
+      {/* Spacer to prevent content hiding behind ticker */}
       <div className="h-9" />
+
+      {/* Floating Leaderboard Button */}
+      <div className="fixed bottom-5 right-5 z-[100]">
+        <Link
+          href="/leaderboard"
+          className="flex items-center gap-2 rounded-full bg-[#6C1C74] px-5 py-3 text-sm font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:bg-[#57165E]"
+        >
+          <Trophy size={18} />
+          See Leaderboard
+          <ArrowRight size={17} />
+        </Link>
+      </div>
     </>
   );
 }

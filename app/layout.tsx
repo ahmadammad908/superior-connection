@@ -5,7 +5,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 import { VotingTicker } from "./components/VotingTicker";
-import FallingLeavesEffect from "./components/FallingLeaves";
+// import FallingLeavesEffect from "./components/FallingLeaves";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -27,7 +27,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={spaceGrotesk.variable}>
         <body className="bg-white font-sans text-gray-900 antialiased">
-          <FallingLeavesEffect />
+          {/* <FallingLeavesEffect /> */}
 
           <VotingTicker />
 

@@ -65,7 +65,7 @@ export function SiteHeader() {
               <SignInButton mode="modal">
                 <button
                   type="button"
-                  className="hidden h-9 items-center rounded-full px-4 text-sm font-medium text-[#4B5563] transition hover:bg-[#6C1C74]/5 hover:text-[#6C1C74] md:inline-flex"
+                  className="hidden h-9 items-center bg-[#6C1C74] rounded-full px-4 text-sm font-medium text-white transition   md:inline-flex  hover:-translate-y-0.5"
                 >
                   Sign In
                 </button>
@@ -74,7 +74,7 @@ export function SiteHeader() {
               <SignUpButton mode="modal">
                 <button
                   type="button"
-                  className="h-9 whitespace-nowrap rounded-full bg-[#6C1C74] px-4 text-sm font-semibold text-white shadow-md shadow-[#6C1C74]/25 transition hover:-translate-y-0.5 hover:bg-[#6C1C74]/90 hover:shadow-lg sm:px-5"
+                  className="h-9 whitespace-nowrap rounded-full  px-4 text-sm font-semibold text-black shadow-md shadow-[#6C1C74]/25 transition hover:-translate-y-0.5 hover:text-white hover:bg-[#6C1C74]/90 hover:shadow-lg sm:px-5"
                 >
                   Sign Up
                 </button>
@@ -86,7 +86,7 @@ export function SiteHeader() {
                 appearance={{
                   elements: {
                     avatarBox:
-                      "h-9 w-9 sm:h-10 sm:w-10 ring-2 ring-[#6C1C74]/30 hover:ring-[#6C1C74] transition",
+                      "h-9 w-9 sm:h-10 sm:w-10 ring-2 ring-[#6C1C74]/30  hover:ring-[#6C1C74] transition",
                   },
                 }}
               />
