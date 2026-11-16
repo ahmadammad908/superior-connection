@@ -4,9 +4,6 @@ import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
 
-import { VotingTicker } from "./components/VotingTicker";
-import FallingLeavesEffect from "./components/FallingLeaves";
-
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
@@ -14,8 +11,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Superior Connection",
-  description: "Vote for your favorite student profiles",
+  title: "Superior - Campus Life & Student Discussion Platform",
+  description:
+    "A university-only social media platform for Superior students to discuss campus life, voice student problems, and stay connected.",
 };
 
 export default function RootLayout({
@@ -26,12 +24,8 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={spaceGrotesk.variable}>
-        <body className="bg-white font-sans text-gray-900 antialiased">
-          <FallingLeavesEffect />
-
-          <VotingTicker />
-
-          {children}
+        <body className="bg-white font-sans text-gray-900 antialiased min-h-screen flex flex-col selection:bg-[#6C1C74] selection:text-white">
+          <div className="flex-1 flex flex-col">{children}</div>
 
           {process.env.NEXT_PUBLIC_GA_ID && (
             <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />

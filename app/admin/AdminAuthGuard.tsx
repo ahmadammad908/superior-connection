@@ -1,6 +1,7 @@
-// app/admin/AdminAuthGuard.tsx
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { connectDB } from "../lib/db";
+import User from "../models/User";
 
 export async function AdminAuthGuard({
   children,
@@ -9,6 +10,13 @@ export async function AdminAuthGuard({
 }) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
-  if (userId !== process.env.ADMIN_CLERK_USER_ID) redirect("/");
+
+  await connectDB();
+  const user = await User.findOne({ clerkId: userId });
+  const isAdmin =
+    userId === process.env.ADMIN_CLERK_USER_ID || user?.role === "admin";
+
+  if (!isAdmin) redirect("/");
+
   return <>{children}</>;
 }

@@ -6,7 +6,9 @@ import { VotingPair } from "../app/./models/VotingPair";
 import { Vote } from "../app/./models/Vote";
 import "../app/./models/Student";
 import { VotingCards } from "../app/./components/VotingCards";
-import { WebsiteComments } from "./components/CommentSection"; // apne folder ke mutabiq path
+import CommentSection from "./components/CommentSection";
+// WebsiteComments alias for the shared CommentSection (uses a placeholder postId for site-wide comments)
+const WebsiteComments = () => <CommentSection postId="website-general" />;
 
 export async function ActivePairSection() {
   await connection();
@@ -60,7 +62,9 @@ export async function ActivePairSection() {
 // import { VotingPair } from "../app/./models/VotingPair";
 // import "../app/./models/Student";
 // import { WinnersPage } from "../app/./components/WinnersPage"; // winners-page.tsx yahan rakhein
-// import { WebsiteComments } from "./components/CommentSection"; // apne folder ke mutabiq path
+// import CommentSection from "./components/CommentSection";
+// WebsiteComments alias for the shared CommentSection (uses a placeholder postId for site-wide comments)
+// const WebsiteComments = () => <CommentSection postId="website-general" />;
 
 // // getPairCounts ka shape mujhe nahi pata, is liye kuch common shapes handle kiye hain
 // function votesFor(counts: any, side: "left" | "right", studentId: string) {

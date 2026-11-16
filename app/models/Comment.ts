@@ -1,30 +1,54 @@
-import { Schema, models, model } from "mongoose";
+import mongoose, { Schema, models, model } from "mongoose";
 
-const CommentSchema = new Schema(
+export interface IComment {
+  _id: mongoose.Types.ObjectId;
+  postId: mongoose.Types.ObjectId;
+  authorId: string; // Clerk userId
+  author?: mongoose.Types.ObjectId;
+  authorName: string;
+  authorImage?: string;
+  body: string;
+  parentId?: mongoose.Types.ObjectId | null;
+  replyToName?: string;
+  likes: string[]; // Clerk userIds
+  likesCount: number;
+  isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const CommentSchema = new Schema<IComment>(
   {
-    userId: { type: String, required: true }, // Clerk userId
-    authorName: { type: String, required: true },
-    authorImage: { type: String },
-    body: { type: String, required: true, trim: true, maxlength: 300 },
-
-    // null = normal comment, warna top-level comment ki _id (yani yeh reply hai)
+    postId: {
+      type: Schema.Types.ObjectId,
+      ref: "Post",
+      required: true,
+      index: true,
+    },
+    authorId: { type: String, required: true, index: true },
+    author: { type: Schema.Types.ObjectId, ref: "User" },
+    authorName: { type: String, required: true, trim: true },
+    authorImage: { type: String, default: "" },
+    body: { type: String, required: true, trim: true, maxlength: 1000 },
     parentId: {
       type: Schema.Types.ObjectId,
       ref: "Comment",
       default: null,
       index: true,
     },
-    // sirf tab set hota hai jab kisi reply ka reply ho
-    replyToName: { type: String },
+    replyToName: { type: String, default: "" },
+    likes: { type: [String], default: [] },
+    likesCount: { type: Number, default: 0 },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-CommentSchema.index({ createdAt: -1 });
+CommentSchema.index({ postId: 1, createdAt: 1 });
 
-// Purana cached model hatao taake naya schema use ho
 if (models.Comment) {
   delete models.Comment;
 }
 
-export default model("Comment", CommentSchema);
+export const Comment = model<IComment>("Comment", CommentSchema);
+export default Comment;

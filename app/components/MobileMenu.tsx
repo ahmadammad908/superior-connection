@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -10,13 +9,16 @@ import {
   ShieldCheck,
   Info,
   FileText,
+  Home,
+  Bookmark,
+  User,
   LogIn,
-  Trophy,
+  MessageCircle,
 } from "lucide-react";
 import { SignInButton, Show } from "@clerk/nextjs";
 
 const itemClass =
-  "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-[#4B5563] transition hover:bg-[#6C1C74]/5 hover:text-[#6C1C74]";
+  "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-gray-700 transition hover:bg-[#6C1C74]/5 hover:text-[#6C1C74]";
 
 const activeClass = "bg-[#6C1C74]/10 font-semibold text-[#6C1C74]";
 
@@ -48,20 +50,15 @@ function MobileMenuContent() {
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Close the menu whenever the route changes.
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // Close on outside click or Escape.
   useEffect(() => {
     if (!open) return;
 
     const onPointerDown = (event: PointerEvent) => {
-      if (
-        ref.current &&
-        !ref.current.contains(event.target as Node)
-      ) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
@@ -98,85 +95,71 @@ function MobileMenuContent() {
         aria-controls="mobile-navigation-menu"
         onClick={() => setOpen((previous) => !previous)}
         className={`flex h-9 w-9 items-center justify-center rounded-full border border-[#6C1C74]/20 text-[#6C1C74] shadow-sm transition active:scale-95 ${
-          open
-            ? "bg-[#6C1C74]/10"
-            : "bg-white hover:bg-[#6C1C74]/5"
+          open ? "bg-[#6C1C74] text-white" : "bg-white hover:bg-[#6C1C74]/5"
         }`}
       >
-        {open ? (
-          <X className="h-4 w-4" />
-        ) : (
-          <Menu className="h-4 w-4" />
-        )}
+        {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
       </button>
 
       {open && (
         <div
           id="mobile-navigation-menu"
-          className="absolute right-0 top-full z-50 mt-3 w-60 overflow-hidden rounded-2xl border border-[#6C1C74]/10 bg-white p-2 shadow-xl shadow-[#6C1C74]/10"
+          className="absolute right-0 top-full mt-2 w-64 origin-top-right rounded-2xl border border-[#6C1C74]/15 bg-white p-2.5 shadow-xl ring-1 ring-black/5 z-50 animate-in fade-in zoom-in-95 duration-150"
         >
-          {/* Leaderboard */}
-          <Link
-            href="/leaderboard"
-            onClick={() => setOpen(false)}
-            aria-current={isActive("/leaderboard") ? "page" : undefined}
-            className={getLinkClass("/leaderboard")}
-          >
-            <Trophy className="h-4 w-4 text-[#6C1C74]" />
-            Leaderboard
-          </Link>
+          <nav className="flex flex-col gap-1">
+            <Link href="/" className={getLinkClass("/")}>
+              <Home className="h-4 w-4 text-[#6C1C74]" />
+              <span>Campus Feed</span>
+            </Link>
 
-          <div className="my-2 h-px bg-[#6C1C74]/10" />
+            <Link href="/saved" className={getLinkClass("/saved")}>
+              <Bookmark className="h-4 w-4 text-[#6C1C74]" />
+              <span>Saved Posts</span>
+            </Link>
 
-          {/* Information */}
-          <Link
-            href="/about"
-            onClick={() => setOpen(false)}
-            aria-current={isActive("/about") ? "page" : undefined}
-            className={getLinkClass("/about")}
-          >
-            <Info className="h-4 w-4 text-[#6C1C74]" />
-            About Us
-          </Link>
+            <Link href="/messages" className={getLinkClass("/messages")}>
+              <MessageCircle className="h-4 w-4 text-[#6C1C74]" />
+              <span>Messages</span>
+            </Link>
 
-          <Link
-            href="/privacy-policy"
-            onClick={() => setOpen(false)}
-            aria-current={
-              isActive("/privacy-policy") ? "page" : undefined
-            }
-            className={getLinkClass("/privacy-policy")}
-          >
-            <FileText className="h-4 w-4 text-[#6C1C74]" />
-            Privacy Policy
-          </Link>
+            <Link href="/profile" className={getLinkClass("/profile")}>
+              <User className="h-4 w-4 text-[#6C1C74]" />
+              <span>My Profile</span>
+            </Link>
 
-          <div className="my-2 h-px bg-[#6C1C74]/10" />
+            <div className="my-1 border-t border-[#6C1C74]/10" />
 
-          {/* Admin */}
-          <Link
-            href="/admin"
-            onClick={() => setOpen(false)}
-            aria-current={isActive("/admin") ? "page" : undefined}
-            className={getLinkClass("/admin")}
-          >
-            <ShieldCheck className="h-4 w-4 text-[#6C1C74]" />
-            Admin
-          </Link>
+            <Link href="/admin" className={getLinkClass("/admin")}>
+              <ShieldCheck className="h-4 w-4 text-[#6C1C74]" />
+              <span>Admin Panel</span>
+            </Link>
 
-          {/* Sign In */}
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className={itemClass}
-              >
-                <LogIn className="h-4 w-4 text-[#6C1C74]" />
-                Sign In
-              </button>
-            </SignInButton>
-          </Show>
+            <Link href="/about" className={getLinkClass("/about")}>
+              <Info className="h-4 w-4 text-gray-400" />
+              <span>About Us</span>
+            </Link>
+
+            <Link
+              href="/privacy-policy"
+              className={getLinkClass("/privacy-policy")}
+            >
+              <FileText className="h-4 w-4 text-gray-400" />
+              <span>Privacy Policy</span>
+            </Link>
+
+            <Show when="signed-out">
+              <div className="my-1 border-t border-[#6C1C74]/10" />
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-[#6C1C74] transition hover:bg-[#6C1C74]/5"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Sign In</span>
+                </button>
+              </SignInButton>
+            </Show>
+          </nav>
         </div>
       )}
     </div>

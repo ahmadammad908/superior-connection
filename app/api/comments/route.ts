@@ -1,150 +1,216 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
-import mongoose from "mongoose";
 import { connectDB } from "../../lib/db";
+import { getCurrentUser, requireUser } from "../../lib/auth";
 import Comment from "../../models/Comment";
+import Post from "../../models/Post";
+import Notification from "../../models/Notification";
 
-const FIELDS = "body authorName authorImage createdAt parentId replyToName";
 
-// GET /api/comments?before=ISO_DATE&limit=20  (public, sab dekh sakte hain)
-// Sirf top-level comments paginate hote hain, har comment ke saath uski replies aati hain.
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const before = searchParams.get("before");
-  const limit = Math.min(Number(searchParams.get("limit")) || 20, 50);
+  try {
+    await connectDB();
+    const { searchParams } = new URL(req.url);
+    const postId = searchParams.get("postId");
 
-  await connectDB();
-
-  // `parentId: null` purane comments ko bhi match karta hai jin mein yeh field nahi hai
-  const filter: Record<string, unknown> = { parentId: null };
-  if (before) {
-    const d = new Date(before);
-    if (!isNaN(d.getTime())) filter.createdAt = { $lt: d };
-  }
-
-  const docs = await Comment.find(filter)
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .select(FIELDS)
-    .lean();
-
-  // In comments ki saari replies (purani pehle)
-  const replyDocs = docs.length
-    ? await Comment.find({ parentId: { $in: docs.map((d: any) => d._id) } })
-        .sort({ createdAt: 1 })
-        .select(FIELDS)
-        .lean()
-    : [];
-
-  const byParent = new Map<string, any[]>();
-  for (const r of replyDocs as any[]) {
-    const key = String(r.parentId);
-    const list = byParent.get(key) ?? [];
-    list.push(r);
-    byParent.set(key, list);
-  }
-
-  const comments = docs.map((d: any) => ({
-    ...d,
-    replies: byParent.get(String(d._id)) ?? [],
-  }));
-
-  return NextResponse.json({
-    comments,
-    nextBefore:
-      docs.length === limit ? (docs[docs.length - 1] as any).createdAt : null,
-  });
-}
-
-// POST /api/comments  { body, parentId? }  (login required)
-export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Please sign in to comment.", code: "UNAUTHENTICATED" },
-      { status: 401 }
-    );
-  }
-
-  const data = await req.json().catch(() => ({}));
-  const body = typeof data.body === "string" ? data.body.trim() : "";
-
-  if (!body || body.length > 300) {
-    return NextResponse.json(
-      { error: "Comment must be 1–300 characters." },
-      { status: 400 }
-    );
-  }
-
-  await connectDB();
-
-  // Spam rokne ke liye: 10 second mein ek hi comment (reply par bhi lagta hai)
-  const recent = await Comment.findOne({
-    userId,
-    createdAt: { $gt: new Date(Date.now() - 10_000) },
-  }).lean();
-  if (recent) {
-    return NextResponse.json(
-      { error: "Please wait a few seconds before commenting again." },
-      { status: 429 }
-    );
-  }
-
-  // ---- Reply handling ----
-  // parentId hamesha top-level comment ki taraf jata hai (sirf aik level nesting).
-  // Agar kisi reply ka reply ho, to replyToName mein us bande ka naam save hota hai.
-  let rootId: mongoose.Types.ObjectId | null = null;
-  let replyToName: string | undefined;
-
-  if (data.parentId) {
-    if (!mongoose.isValidObjectId(data.parentId)) {
+    if (!postId) {
       return NextResponse.json(
-        { error: "Invalid comment to reply to." },
+        { error: "postId is required" },
         { status: 400 }
       );
     }
 
-    const parent = (await Comment.findById(data.parentId).lean()) as any;
-    if (!parent) {
+    const authData = await getCurrentUser(false);
+    const currentUserId = authData?.userId || null;
+    const isAdmin =
+      currentUserId === process.env.ADMIN_CLERK_USER_ID ||
+      authData?.user?.role === "admin";
+
+    const allComments = await Comment.find({
+      postId,
+      isDeleted: false,
+    })
+      .sort({ createdAt: 1 })
+      .populate("author", "name username avatar department semester role")
+      .lean();
+
+    const rootComments: any[] = [];
+    const repliesMap = new Map<string, any[]>();
+
+    allComments.forEach((c: any) => {
+      const isLiked = currentUserId ? c.likes?.includes(currentUserId) : false;
+      const isAuthor = currentUserId === c.authorId;
+      const author = c.author || {};
+
+      const formatted = {
+        _id: c._id.toString(),
+        postId: c.postId.toString(),
+        authorId: c.authorId,
+        author: {
+          name: author.name || c.authorName || "Student",
+          username: author.username || "student",
+          avatar: author.avatar || c.authorImage || "",
+          department: author.department || "",
+          semester: author.semester || "",
+          role: author.role || "student",
+        },
+        body: c.body,
+        parentId: c.parentId ? c.parentId.toString() : null,
+        replyToName: c.replyToName || "",
+        likesCount: c.likesCount || 0,
+        isLiked,
+        isAuthor,
+        canDelete: isAuthor || isAdmin,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      };
+
+      if (!formatted.parentId) {
+        rootComments.push({ ...formatted, replies: [] });
+      } else {
+        const existing = repliesMap.get(formatted.parentId) || [];
+        existing.push(formatted);
+        repliesMap.set(formatted.parentId, existing);
+      }
+    });
+
+    rootComments.forEach((root) => {
+      root.replies = repliesMap.get(root._id) || [];
+    });
+
+    return NextResponse.json({ comments: rootComments });
+  } catch (err: any) {
+    console.error("GET /api/comments error:", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to fetch comments." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { userId, user } = await requireUser(true);
+    await connectDB();
+
+    const body = await req.json();
+    const { postId, body: commentText, parentId, replyToName } = body;
+
+    const trimmed = (commentText || "").trim();
+    if (!trimmed) {
       return NextResponse.json(
-        { error: "The comment you are replying to no longer exists." },
-        { status: 404 }
+        { error: "Comment cannot be empty." },
+        { status: 400 }
       );
     }
 
-    if (parent.parentId) {
-      rootId = parent.parentId;
-      replyToName = parent.authorName || "Student";
-    } else {
-      rootId = parent._id;
+    if (trimmed.length > 1000) {
+      return NextResponse.json(
+        { error: "Comment cannot exceed 1000 characters." },
+        { status: 400 }
+      );
     }
-  }
 
-  const user = await currentUser();
-  const authorName = user?.username || user?.firstName || "Student";
+    const post = await Post.findOne({ _id: postId, isDeleted: false });
+    if (!post) {
+      return NextResponse.json({ error: "Post not found." }, { status: 404 });
+    }
 
-  const created = await Comment.create({
-    userId,
-    authorName,
-    authorImage: user?.imageUrl,
-    body,
-    parentId: rootId,
-    replyToName,
-  });
+    let parentComment: any = null;
+    if (parentId) {
+      parentComment = await Comment.findOne({
+        _id: parentId,
+        isDeleted: false,
+      });
+      if (!parentComment) {
+        return NextResponse.json(
+          { error: "Parent comment not found." },
+          { status: 404 }
+        );
+      }
+    }
 
-  return NextResponse.json(
-    {
-      comment: {
-        _id: created._id,
-        body: created.body,
-        authorName: created.authorName,
-        authorImage: created.authorImage,
-        createdAt: created.createdAt,
-        parentId: created.parentId ?? null,
-        replyToName: created.replyToName,
-        replies: [],
+    const newComment = await Comment.create({
+      postId,
+      authorId: userId,
+      author: user._id,
+      authorName: user.name,
+      authorImage: user.avatar,
+      body: trimmed,
+      parentId: parentId || null,
+      replyToName: replyToName || (parentComment ? parentComment.authorName : ""),
+      likes: [],
+      likesCount: 0,
+      isDeleted: false,
+    });
+
+    // Increment post commentsCount
+    await Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } });
+
+    // Notifications
+    if (parentId && parentComment && parentComment.authorId !== userId) {
+      // Reply notification to parent comment author
+      await Notification.create({
+        recipientId: parentComment.authorId,
+        actorId: userId,
+        actorName: user.name,
+        actorImage: user.avatar,
+        type: "reply_comment",
+        postId: post._id,
+        commentId: newComment._id,
+        message: `${user.name} replied to your comment.`,
+        read: false,
+      });
+    } else if (post.authorId !== userId) {
+      // Top level comment notification to post author
+      await Notification.create({
+        recipientId: post.authorId,
+        actorId: userId,
+        actorName: user.name,
+        actorImage: user.avatar,
+        type: "comment_post",
+        postId: post._id,
+        commentId: newComment._id,
+        message: `${user.name} commented on your post.`,
+        read: false,
+      });
+    }
+
+    return NextResponse.json(
+      {
+        message: "Comment added",
+        comment: {
+          _id: newComment._id.toString(),
+          postId: newComment.postId.toString(),
+          authorId: newComment.authorId,
+          author: {
+            name: user.name,
+            username: user.username,
+            avatar: user.avatar,
+            department: user.department,
+            semester: user.semester,
+            role: user.role,
+          },
+          body: newComment.body,
+          parentId: newComment.parentId
+            ? newComment.parentId.toString()
+            : null,
+          replyToName: newComment.replyToName,
+          likesCount: 0,
+          isLiked: false,
+          isAuthor: true,
+          canDelete: true,
+          replies: [],
+          createdAt: newComment.createdAt,
+        },
       },
-    },
-    { status: 201 }
-  );
+      { status: 201 }
+    );
+  } catch (err: any) {
+    if (err instanceof Response) return err;
+    console.error("POST /api/comments error:", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to post comment." },
+      { status: 500 }
+    );
+  }
 }
