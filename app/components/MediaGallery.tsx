@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { X, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Maximize2, Play } from "lucide-react";
 
 interface MediaGalleryProps {
   images?: string[];
@@ -11,6 +11,7 @@ interface MediaGalleryProps {
 export function MediaGallery({ images = [], video }: MediaGalleryProps) {
   const [slideIndex, setSlideIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   // Touch/swipe support
   const touchStartX = useRef<number | null>(null);
@@ -187,16 +188,54 @@ export function MediaGallery({ images = [], video }: MediaGalleryProps) {
         </div>
       )}
 
-      {/* ─── Video Player ─── */}
+      {/* ─── Video Thumbnail (click opens popup) ─── */}
       {hasVideo && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-black">
+        <div
+          className="relative overflow-hidden rounded-2xl border border-gray-100 bg-black cursor-pointer group"
+          onClick={() => setVideoOpen(true)}
+        >
           <video
-            src={video}
-            controls
+            src={`${video}#t=0.1`}
+            muted
             playsInline
             preload="metadata"
-            className="max-h-[480px] w-full object-contain"
+            className="pointer-events-none max-h-[480px] w-full object-contain"
           />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition group-hover:bg-black/30">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#6C1C74] text-white shadow-lg transition group-hover:scale-105">
+              <Play className="h-6 w-6 fill-white" />
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Video Lightbox Modal ─── */}
+      {videoOpen && hasVideo && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md animate-in fade-in duration-150"
+          onClick={() => setVideoOpen(false)}
+        >
+          {/* Close */}
+          <button
+            type="button"
+            onClick={() => setVideoOpen(false)}
+            className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/40 transition"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          <div
+            className="relative max-h-[90vh] max-w-4xl w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <video
+              src={video}
+              controls
+              autoPlay
+              playsInline
+              className="max-h-[85vh] max-w-full rounded-xl bg-black"
+            />
+          </div>
         </div>
       )}
 
