@@ -299,7 +299,7 @@ export function CreatePostCard({ onPostCreated, isAdmin = false }: CreatePostCar
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
-                    className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition hover:bg-red-600"
+                    className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition hover:bg-red-600"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -365,8 +365,8 @@ export function CreatePostCard({ onPostCreated, isAdmin = false }: CreatePostCar
           </div>
         )}
 
-        {/* ── Bottom Action Bar ── */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-[#6C1C74]/10 px-4 py-3 sm:px-5">
+        {/* ── Bottom Action Bar (single row, mobile optimized) ── */}
+        <div className="flex flex-nowrap items-center gap-2 border-t border-[#6C1C74]/10 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
 
           {/* Hidden file inputs */}
           <input
@@ -385,24 +385,24 @@ export function CreatePostCard({ onPostCreated, isAdmin = false }: CreatePostCar
             onChange={(e) => handleFileUpload(e, "video")}
           />
 
-          {/* Category Selector */}
-          <div className="relative">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as PostCategory)}
-              className="appearance-none cursor-pointer rounded-full border border-[#6C1C74]/25 bg-[#6C1C74]/5 pl-2.5 pr-7 py-1.5 text-xs font-semibold text-[#6C1C74] outline-none focus:border-[#6C1C74]/50 focus:ring-1 focus:ring-[#6C1C74]/30 transition"
-            >
-              {POST_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_ICONS[cat]} {cat}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#6C1C74]" />
-          </div>
+          {/* Left tools: one row, scrolls horizontally if space runs out */}
+          <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-1.5">
+            {/* Category Selector */}
+            <div className="relative shrink-0">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as PostCategory)}
+                className="h-9 max-w-[112px] cursor-pointer appearance-none truncate rounded-full border border-[#6C1C74]/25 bg-[#6C1C74]/5 pl-2.5 pr-6 text-[11px] font-semibold text-[#6C1C74] outline-none transition focus:border-[#6C1C74]/50 focus:ring-1 focus:ring-[#6C1C74]/30 sm:h-auto sm:max-w-none sm:py-1.5 sm:pl-3 sm:pr-7 sm:text-xs"
+              >
+                {POST_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {CATEGORY_ICONS[cat]} {cat}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#6C1C74]" />
+            </div>
 
-          {/* Media buttons group */}
-          <div className="flex items-center gap-1">
             {/* Image Upload */}
             <button
               type="button"
@@ -415,12 +415,12 @@ export function CreatePostCard({ onPostCreated, isAdmin = false }: CreatePostCar
                   ? "Remove video before adding images"
                   : "Add photos (up to 4)"
               }
-              className="group relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-[#6C1C74]/8 hover:text-[#6C1C74] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-xs font-medium text-gray-600 transition hover:bg-[#6C1C74]/8 hover:text-[#6C1C74] disabled:cursor-not-allowed disabled:opacity-40 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5"
             >
-              <ImageIcon className="h-4 w-4 text-[#6C1C74]" />
+              <ImageIcon className="h-[18px] w-[18px] text-[#6C1C74] sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Photo</span>
               {images.length > 0 && (
-                <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#6C1C74] px-1 text-[9px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#6C1C74] px-1 text-[9px] font-bold text-white sm:static">
                   {images.length}
                 </span>
               )}
@@ -438,81 +438,80 @@ export function CreatePostCard({ onPostCreated, isAdmin = false }: CreatePostCar
                   ? "1 video already added"
                   : "Add a video (up to 60MB)"
               }
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-[#6C1C74]/8 hover:text-[#6C1C74] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-xs font-medium text-gray-600 transition hover:bg-[#6C1C74]/8 hover:text-[#6C1C74] disabled:cursor-not-allowed disabled:opacity-40 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5"
             >
-              <Video className="h-4 w-4 text-[#6C1C74]" />
+              <Video className="h-[18px] w-[18px] text-[#6C1C74] sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Video</span>
               {video && (
-                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#6C1C74] text-[9px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#6C1C74] text-[9px] font-bold text-white sm:static">
                   ✓
                 </span>
               )}
             </button>
+
+            {/* Divider */}
+            <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-gray-200 sm:block" />
+
+            {/* Anonymous Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsAnonymous((p) => !p)}
+              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-xs font-medium transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 ${
+                isAnonymous
+                  ? "bg-gray-800 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+              title={isAnonymous ? "Posting anonymously" : "Post as yourself"}
+            >
+              <EyeOff className="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5" />
+              <span className="hidden sm:inline">
+                {isAnonymous ? "Anonymous" : "Anon"}
+              </span>
+            </button>
+
+            {/* Admin Controls */}
+            {isAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsAnnouncement((p) => !p)}
+                  title="Mark as announcement"
+                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-xs font-medium transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 ${
+                    isAnnouncement
+                      ? "bg-[#6C1C74] text-white"
+                      : "bg-[#6C1C74]/8 text-[#6C1C74] hover:bg-[#6C1C74]/15"
+                  }`}
+                >
+                  <Megaphone className="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5" />
+                  <span className="hidden sm:inline">Announce</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPinned((p) => !p)}
+                  title="Pin post"
+                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-xs font-medium transition sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 ${
+                    isPinned
+                      ? "bg-[#6C1C74] text-white"
+                      : "bg-[#6C1C74]/8 text-[#6C1C74] hover:bg-[#6C1C74]/15"
+                  }`}
+                >
+                  <Pin className="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5" />
+                  <span className="hidden sm:inline">Pin</span>
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Divider */}
-          <div className="hidden sm:block h-5 w-px bg-gray-200" />
-
-          {/* Anonymous Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsAnonymous((p) => !p)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-              isAnonymous
-                ? "bg-gray-800 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-            title={isAnonymous ? "Posting anonymously" : "Post as yourself"}
-          >
-            <EyeOff className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">
-              {isAnonymous ? "Anonymous" : "Anon"}
-            </span>
-          </button>
-
-          {/* Admin Controls */}
-          {isAdmin && (
-            <>
-              <button
-                type="button"
-                onClick={() => setIsAnnouncement((p) => !p)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  isAnnouncement
-                    ? "bg-[#6C1C74] text-white"
-                    : "text-[#6C1C74] bg-[#6C1C74]/8 hover:bg-[#6C1C74]/15"
-                }`}
-              >
-                <Megaphone className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Announce</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsPinned((p) => !p)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  isPinned
-                    ? "bg-[#6C1C74] text-white"
-                    : "text-[#6C1C74] bg-[#6C1C74]/8 hover:bg-[#6C1C74]/15"
-                }`}
-              >
-                <Pin className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Pin</span>
-              </button>
-            </>
-          )}
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Post Button */}
+          {/* Post Button (always pinned on the right) */}
           <button
             type="submit"
             disabled={submitting || uploading || (!content.trim() && !hasMedia)}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold shadow-md transition-all active:scale-95 ${
+            className={`inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-4 text-xs font-bold shadow-md transition-all active:scale-95 sm:h-auto sm:gap-2 sm:px-5 sm:py-2 ${
               submitted
                 ? "bg-green-600 text-white shadow-green-600/25"
-                : "bg-[#6C1C74] text-white shadow-[#6C1C74]/25 hover:bg-[#6C1C74]/90 hover:-translate-y-0.5"
-            } disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0`}
+                : "bg-[#6C1C74] text-white shadow-[#6C1C74]/25 hover:-translate-y-0.5 hover:bg-[#6C1C74]/90"
+            } disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {submitting || uploading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
