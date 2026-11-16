@@ -262,6 +262,14 @@ export function MessagesClient() {
     return () => clearInterval(interval);
   }, [isSignedIn, fetchConversations]);
 
+  // Auto-resize message textarea (also resets height after sending)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+  }, [inputText, activeConversation]);
+
   // Handle User Search for New Chat Modal
   useEffect(() => {
     if (!newChatModalOpen) {
@@ -866,23 +874,23 @@ export function MessagesClient() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isSending || isUploadingImage}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-[#6C1C74]/30 hover:bg-[#6C1C74]/5 hover:text-[#6C1C74] transition"
+                      className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:border-[#6C1C74]/30 hover:bg-[#6C1C74]/5 hover:text-[#6C1C74] transition"
                       title="Attach photo"
                     >
                       <ImageIcon className="h-5 w-5" />
                     </button>
 
                     {/* Text Input */}
-                    <div className="flex-1 relative">
+                    <div className="flex-1 min-w-0">
                       <textarea
                         ref={inputRef}
                         rows={1}
-                        placeholder={`Message ${activeConversation.otherUser.name}...`}
+                        placeholder="Type a message..."
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
                         onKeyDown={handleKeyDown}
                         disabled={isSending}
-                        className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#6C1C74] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#6C1C74] max-h-32"
+                        className="block w-full min-h-[42px] max-h-32 resize-none overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 px-4 py-[9px] text-[16px] leading-6 text-gray-900 placeholder:text-gray-400 focus:border-[#6C1C74] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#6C1C74] sm:text-sm sm:leading-6"
                       />
                     </div>
 
@@ -894,7 +902,7 @@ export function MessagesClient() {
                         isSending ||
                         isUploadingImage
                       }
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6C1C74] text-white shadow-md shadow-[#6C1C74]/20 transition hover:bg-[#6C1C74]/90 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                      className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#6C1C74] text-white shadow-md shadow-[#6C1C74]/20 transition hover:bg-[#6C1C74]/90 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                     >
                       {isSending || isUploadingImage ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -963,13 +971,13 @@ export function MessagesClient() {
             <div className="relative">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-gray-400" />
               <input
-  type="text"
-  autoFocus
-  placeholder="Search by student name, @username, or department..."
-  value={userSearchQuery}
-  onChange={(e) => setUserSearchQuery(e.target.value)}
-  className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 pl-10 pr-4 py-2.5 text-[16px] sm:text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#6C1C74] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#6C1C74]"
-/>
+                type="text"
+                autoFocus
+                placeholder="Search by student name, @username, or department..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 pl-10 pr-4 py-2.5 text-[16px] sm:text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#6C1C74] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#6C1C74]"
+              />
             </div>
 
             {/* Student Search Results */}
