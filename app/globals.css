@@ -5,3 +5,10 @@
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
 
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

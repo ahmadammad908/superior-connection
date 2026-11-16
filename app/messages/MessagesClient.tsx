@@ -963,13 +963,13 @@ export function MessagesClient() {
             <div className="relative">
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-gray-400" />
               <input
-                type="text"
-                autoFocus
-                placeholder="Search by student name, @username, or department..."
-                value={userSearchQuery}
-                onChange={(e) => setUserSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 pl-10 pr-4 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#6C1C74] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#6C1C74]"
-              />
+  type="text"
+  autoFocus
+  placeholder="Search by student name, @username, or department..."
+  value={userSearchQuery}
+  onChange={(e) => setUserSearchQuery(e.target.value)}
+  className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 pl-10 pr-4 py-2.5 text-[16px] sm:text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#6C1C74] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#6C1C74]"
+/>
             </div>
 
             {/* Student Search Results */}
