@@ -34,6 +34,7 @@ const ConversationSchema = new Schema<IConversation>(
 );
 
 ConversationSchema.index({ participants: 1, lastMessageAt: -1 });
+ConversationSchema.index({ participants: 1, unreadBy: 1 });
 
 if (models.Conversation) {
   delete models.Conversation;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Edit3 } from "lucide-react";
+import { X, Loader2, Edit3, AlertCircle } from "lucide-react";
 import { POST_CATEGORIES, PostCategory } from "../lib/constants";
 
 interface EditPostModalProps {
@@ -86,8 +86,16 @@ export function EditPostModal({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {error && (
-            <div className="rounded-xl bg-gray-50 border border-[#6C1C74]/20 p-3 text-xs text-[#6C1C74]">
-              {error}
+            <div className="flex items-start gap-2.5 rounded-xl border-2 border-red-500 bg-red-50 p-3 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-red-400/30 animate-in fade-in">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+              <div className="flex-1 leading-relaxed">{error}</div>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-800 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
 

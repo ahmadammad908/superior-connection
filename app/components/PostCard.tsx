@@ -19,10 +19,13 @@ import {
   Flag,
   Check,
   ShieldAlert,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import { MediaGallery } from "./MediaGallery";
 import { ReportModal } from "./ReportModal";
 import { EditPostModal } from "./EditPostModal";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 export interface PostItem {
   _id: string;
@@ -47,6 +50,7 @@ export interface PostItem {
   tags: string[];
   isAnonymous: boolean;
   isPinned: boolean;
+  isProfilePinned?: boolean;
   isAnnouncement: boolean;
   likesCount: number;
   commentsCount: number;
@@ -87,6 +91,7 @@ export function PostCard({
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [isSaved, setIsSaved] = useState(post.isSaved || false);
   const [isPinned, setIsPinned] = useState(post.isPinned || false);
+  const [isProfilePinned, setIsProfilePinned] = useState(post.isProfilePinned || false);
   const [content, setContent] = useState(post.content);
   const [category, setCategory] = useState(post.category);
 
@@ -95,6 +100,20 @@ export function PostCard({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Fallback author to prevent crashes if author is missing
+  const author = post.author || {
+    name: "Student",
+    username: "student",
+    avatar: "",
+    department: "",
+    semester: "",
+    role: "student",
+  };
+  const authorName = author.name || "Student";
+  const authorUsername = author.username || "student";
+  const authorAvatar = author.avatar || "";
 
   // Optimistic like
   const handleLike = async () => {
@@ -133,18 +152,49 @@ export function PostCard({
     }
   };
 
-  // Pin / unpin (Admin)
+  // Pin / unpin on Global Feed (Admin only)
   const handleTogglePin = async () => {
     setMenuOpen(false);
     try {
-      const res = await fetch(`/api/posts/${post._id}/pin`, { method: "POST" });
+      const res = await fetch(`/api/posts/${post._id}/pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: "global" }),
+      });
       if (res.ok) {
         const data = await res.json();
         setIsPinned(data.isPinned);
         onPostUpdated?.(post._id, { isPinned: data.isPinned });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setDeleteError(errData.error || "Only admins can pin to global feed.");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setDeleteError(e?.message || "Failed to pin post.");
+    }
+  };
+
+  // Pin / unpin on User Profile Feed (Author)
+  const handleToggleProfilePin = async () => {
+    setMenuOpen(false);
+    try {
+      const res = await fetch(`/api/posts/${post._id}/pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: "profile" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsProfilePinned(data.isProfilePinned);
+        onPostUpdated?.(post._id, { isProfilePinned: data.isProfilePinned });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setDeleteError(errData.error || "Failed to update profile pin.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setDeleteError(e?.message || "Failed to pin post to profile.");
     }
   };
 
@@ -152,17 +202,19 @@ export function PostCard({
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
     setIsDeleting(true);
+    setDeleteError(null);
     setMenuOpen(false);
     try {
       const res = await fetch(`/api/posts/${post._id}`, { method: "DELETE" });
       if (res.ok) {
         onPostDeleted?.(post._id);
       } else {
-        alert("Failed to delete post.");
+        const errData = await res.json().catch(() => ({}));
+        setDeleteError(errData.error || "Failed to delete post.");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to delete post.");
+      setDeleteError(e?.message || "Failed to delete post.");
     } finally {
       setIsDeleting(false);
     }
@@ -177,9 +229,9 @@ export function PostCard({
   };
 
   const authorLink =
-    post.isAnonymous || post.author.username === "anonymous"
+    post.isAnonymous || authorUsername === "anonymous"
       ? null
-      : `/profile/${post.author.username}`;
+      : `/profile/${authorUsername}`;
 
   // Format content with hashtags in purple
   const renderFormattedContent = (text: string) => {
@@ -209,12 +261,35 @@ export function PostCard({
           : "border-[#6C1C74]/15 hover:border-[#6C1C74]/30"
       }`}
     >
-      {/* Top Banner Badges (Announcement / Pinned) */}
+      {/* Delete error notification banner in prominent RED */}
+      {deleteError && (
+        <div className="mb-3 flex items-center justify-between rounded-xl border-2 border-red-500 bg-red-50 p-2.5 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-red-400/30">
+          <div className="flex items-center gap-1.5">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+            <span>{deleteError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDeleteError(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Top Banner Badges (Announcement / Campus Pinned / Profile Pinned) */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         {isPinned && (
           <span className="inline-flex items-center gap-1 rounded-full bg-[#6C1C74] px-2.5 py-0.5 text-[11px] font-bold text-white shadow-xs">
             <Pin className="h-3 w-3" />
-            Pinned
+            Pinned to Campus Feed
+          </span>
+        )}
+        {!isPinned && isProfilePinned && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#6C1C74]/30 bg-[#6C1C74]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#6C1C74] shadow-xs">
+            <Pin className="h-3 w-3" />
+            Pinned to Profile
           </span>
         )}
         {post.isAnnouncement && (
@@ -236,15 +311,15 @@ export function PostCard({
               <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-500">
                 <EyeOff className="h-5 w-5" />
               </div>
-            ) : post.author.avatar ? (
+            ) : authorAvatar ? (
               <img
-                src={post.author.avatar}
-                alt={post.author.name}
+                src={authorAvatar}
+                alt={authorName}
                 className="h-full w-full object-cover"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-[#6C1C74] text-sm font-bold text-white">
-                {post.author.name.charAt(0).toUpperCase()}
+                {authorName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
@@ -254,19 +329,25 @@ export function PostCard({
               {authorLink ? (
                 <Link
                   href={authorLink}
-                  className="font-bold text-sm text-gray-900 hover:text-[#6C1C74] truncate"
+                  className="font-bold text-sm text-gray-900 hover:text-[#6C1C74] flex items-center gap-1 truncate"
                 >
-                  {post.author.name}
+                  <span className="truncate">{authorName}</span>
+                  {author.role === "admin" && (
+                    <VerifiedBadge size={15} />
+                  )}
                 </Link>
               ) : (
-                <span className="font-bold text-sm text-gray-900 truncate">
-                  {post.author.name}
+                <span className="font-bold text-sm text-gray-900 flex items-center gap-1 truncate">
+                  <span className="truncate">{authorName}</span>
+                  {author.role === "admin" && (
+                    <VerifiedBadge size={15} />
+                  )}
                 </span>
               )}
 
-              {post.author.role === "admin" && (
-                <span className="inline-flex items-center gap-0.5 text-[#6C1C74]" title="Official Administrator">
-                  <Shield className="h-3.5 w-3.5 fill-[#6C1C74]" />
+              {author.role === "admin" && (
+                <span className="inline-flex items-center gap-0.5 text-[#0095F6] font-semibold text-[11px]" title="Official Administrator">
+                  <Shield className="h-3 w-3 fill-[#0095F6]" />
                 </span>
               )}
 
@@ -274,14 +355,14 @@ export function PostCard({
             </div>
 
             <div className="flex items-center gap-2 text-xs text-gray-500 truncate">
-              {!post.isAnonymous && post.author.username && (
-                <span>@{post.author.username}</span>
+              {!post.isAnonymous && authorUsername && (
+                <span>@{authorUsername}</span>
               )}
-              {post.author.department && (
-                <span>· {post.author.department}</span>
+              {author.department && (
+                <span>· {author.department}</span>
               )}
-              {post.author.semester && (
-                <span>· {post.author.semester}</span>
+              {author.semester && (
+                <span>· {author.semester}</span>
               )}
             </div>
 
@@ -306,15 +387,28 @@ export function PostCard({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 rounded-2xl border border-[#6C1C74]/15 bg-white p-1.5 shadow-xl z-30 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-2xl border border-[#6C1C74]/15 bg-white p-1.5 shadow-xl z-30 animate-in fade-in zoom-in-95 duration-100">
+              {/* Only Admin can pin to global campus feed */}
               {isAdmin && (
                 <button
                   type="button"
                   onClick={handleTogglePin}
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-[#6C1C74]/5 hover:text-[#6C1C74]"
                 >
-                  <Pin className="h-3.5 w-3.5" />
-                  <span>{isPinned ? "Unpin post" : "Pin to top"}</span>
+                  <Pin className="h-3.5 w-3.5 text-[#6C1C74]" />
+                  <span>{isPinned ? "Unpin from Campus Feed" : "Pin to Campus Feed (Admin)"}</span>
+                </button>
+              )}
+
+              {/* Simple User can ONLY pin their own posts to their own profile feed */}
+              {!isAdmin && post.isAuthor && (
+                <button
+                  type="button"
+                  onClick={handleToggleProfilePin}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-[#6C1C74]/5 hover:text-[#6C1C74]"
+                >
+                  <Pin className="h-3.5 w-3.5 text-[#6C1C74]" />
+                  <span>{isProfilePinned ? "Unpin from My Profile" : "Pin to My Profile"}</span>
                 </button>
               )}
 

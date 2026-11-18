@@ -19,6 +19,7 @@ import { SiteHeader } from "../components/SiteHeader";
 import Footer from "../components/Footer";
 import { PostCard, PostItem } from "../components/PostCard";
 import { EditProfileModal } from "../components/EditProfileModal";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 
 export default function MyProfilePage() {
   const { isSignedIn, isLoaded } = useUser();
@@ -139,14 +140,17 @@ export default function MyProfilePage() {
               </div>
 
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {profile?.name}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-1.5">
+                    <span>{profile?.name}</span>
+                    {profile?.role === "admin" && (
+                      <VerifiedBadge size={20} />
+                    )}
                   </h1>
                   {profile?.role === "admin" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#6C1C74]/10 px-2 py-0.5 text-[10px] font-bold text-[#6C1C74]">
-                      <ShieldCheck className="h-3 w-3" />
-                      Admin
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#0095F6]/10 text-[#0095F6] border border-[#0095F6]/20 px-2.5 py-0.5 text-[11px] font-bold">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Verified Admin
                     </span>
                   )}
                 </div>

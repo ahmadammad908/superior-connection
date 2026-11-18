@@ -52,6 +52,7 @@ const NotificationSchema = new Schema<INotification>(
 );
 
 NotificationSchema.index({ recipientId: 1, createdAt: -1 });
+NotificationSchema.index({ recipientId: 1, read: 1, createdAt: -1 });
 
 if (models.Notification) {
   delete models.Notification;

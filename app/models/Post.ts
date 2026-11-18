@@ -15,6 +15,7 @@ export interface IPost {
   tags: string[];
   isAnonymous: boolean;
   isPinned: boolean;
+  isProfilePinned?: boolean;
   isAnnouncement: boolean;
   likes: string[]; // array of Clerk userIds
   likesCount: number;
@@ -48,6 +49,7 @@ const PostSchema = new Schema<IPost>(
     tags: { type: [String], default: [], index: true },
     isAnonymous: { type: Boolean, default: false },
     isPinned: { type: Boolean, default: false, index: true },
+    isProfilePinned: { type: Boolean, default: false, index: true },
     isAnnouncement: { type: Boolean, default: false, index: true },
     likes: { type: [String], default: [] },
     likesCount: { type: Number, default: 0, index: true },
@@ -57,9 +59,12 @@ const PostSchema = new Schema<IPost>(
   { timestamps: true }
 );
 
-PostSchema.index({ isPinned: -1, createdAt: -1 });
-PostSchema.index({ createdAt: -1 });
-PostSchema.index({ likesCount: -1, createdAt: -1 });
+// High performance compound indexes to prevent database load
+PostSchema.index({ isDeleted: 1, isPinned: -1, createdAt: -1 });
+PostSchema.index({ isDeleted: 1, category: 1, isPinned: -1, createdAt: -1 });
+PostSchema.index({ isDeleted: 1, authorId: 1, isProfilePinned: -1, createdAt: -1 });
+PostSchema.index({ isDeleted: 1, isPinned: -1, likesCount: -1, commentsCount: -1, createdAt: -1 });
+PostSchema.index({ tags: 1, isDeleted: 1, createdAt: -1 });
 
 if (models.Post) {
   delete models.Post;

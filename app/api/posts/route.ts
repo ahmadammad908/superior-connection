@@ -52,27 +52,40 @@ export async function GET(req: NextRequest) {
     }
 
     // Build sort
-    // Pinned posts always appear first
+    // For profile feeds, user's profile-pinned posts appear first
+    // For global feed, only admin-pinned posts appear first
     const sortOptions: any = {};
-    sortOptions.isPinned = -1;
-
-    if (sort === "trending") {
-      sortOptions.likesCount = -1;
-      sortOptions.commentsCount = -1;
+    if (username) {
+      sortOptions.isProfilePinned = -1;
+      sortOptions.isPinned = -1;
       sortOptions.createdAt = -1;
     } else {
-      sortOptions.createdAt = -1;
+      sortOptions.isPinned = -1;
+      if (sort === "trending") {
+        sortOptions.likesCount = -1;
+        sortOptions.commentsCount = -1;
+        sortOptions.createdAt = -1;
+      } else {
+        sortOptions.createdAt = -1;
+      }
     }
 
-    const [posts, total] = await Promise.all([
-      Post.find(filter)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .populate("author", "name username avatar department semester role")
-        .lean(),
-      Post.countDocuments(filter),
+    const fetchLimit = limit + 1;
+    const postsPromise = Post.find(filter)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(fetchLimit)
+      .populate("author", "name username avatar department semester role")
+      .lean();
+
+    const [rawPosts, totalCount] = await Promise.all([
+      postsPromise,
+      page === 1 ? Post.countDocuments(filter) : Promise.resolve(-1),
     ]);
+
+    const hasMore = rawPosts.length > limit;
+    const posts = hasMore ? rawPosts.slice(0, limit) : rawPosts;
+    const total = totalCount >= 0 ? totalCount : skip + posts.length + (hasMore ? 1 : 0);
 
     // Check user's saved posts
     let savedPostIds = new Set<string>();
@@ -130,6 +143,7 @@ export async function GET(req: NextRequest) {
         tags: post.tags || [],
         isAnonymous: post.isAnonymous,
         isPinned: post.isPinned,
+        isProfilePinned: Boolean(post.isProfilePinned),
         isAnnouncement: post.isAnnouncement,
         likesCount: post.likesCount || 0,
         commentsCount: post.commentsCount || 0,
@@ -224,12 +238,40 @@ export async function POST(req: NextRequest) {
       isDeleted: false,
     });
 
+    const displayAuthor = Boolean(isAnonymous)
+      ? {
+          name: "Anonymous Student",
+          username: "anonymous",
+          avatar: "",
+          department: "Campus",
+          semester: "",
+          role: "student",
+        }
+      : {
+          name: user.name || "Student",
+          username: user.username || "student",
+          avatar: user.avatar || "",
+          department: user.department || "",
+          semester: user.semester || "",
+          role: user.role || "student",
+        };
+
+    const realAuthor = Boolean(isAnonymous) && isAdmin
+      ? {
+          name: user.name || "Unknown",
+          username: user.username || "unknown",
+          clerkId: userId,
+        }
+      : undefined;
+
     return NextResponse.json(
       {
         message: "Post created successfully",
         post: {
           _id: newPost._id.toString(),
           authorId: newPost.authorId,
+          author: displayAuthor,
+          realAuthor,
           content: newPost.content,
           images: newPost.images,
           video: newPost.video,

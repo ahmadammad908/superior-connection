@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, Loader2, Camera, User as UserIcon } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { X, Loader2, Camera, User as UserIcon, AlertCircle } from "lucide-react";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function EditProfileModal({
   initialData,
   onProfileUpdated,
 }: EditProfileModalProps) {
+  const { user } = useUser();
   const [name, setName] = useState(initialData.name || "");
   const [username, setUsername] = useState(initialData.username || "");
   const [bio, setBio] = useState(initialData.bio || "");
@@ -51,6 +53,7 @@ export function EditProfileModal({
     setError(null);
 
     try {
+      // 1. Upload to Cloudinary for fast CDN image delivery
       const fd = new FormData();
       fd.append("file", file);
       fd.append("type", "image");
@@ -62,6 +65,15 @@ export function EditProfileModal({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to upload avatar.");
       setAvatar(data.url);
+
+      // 2. Also update Clerk profile image directly
+      if (user?.setProfileImage) {
+        try {
+          await user.setProfileImage({ file });
+        } catch (clerkAvatarErr) {
+          console.warn("Clerk avatar sync note:", clerkAvatarErr);
+        }
+      }
     } catch (err: any) {
       setError(err.message || "Avatar upload failed.");
     } finally {
@@ -80,6 +92,7 @@ export function EditProfileModal({
     setError(null);
 
     try {
+      // 1. Update database & backend Clerk profile
       const res = await fetch("/api/users/me", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -96,6 +109,21 @@ export function EditProfileModal({
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to update profile.");
+      }
+
+      // 2. Also sync client Clerk session so UserButton & Clerk hooks update immediately
+      if (user) {
+        try {
+          const parts = name.trim().split(" ");
+          await user.update({
+            firstName: parts[0] || name.trim(),
+            lastName: parts.slice(1).join(" ") || "",
+            ...(username.trim() ? { username: username.trim() } : {}),
+          });
+          await user.reload();
+        } catch (clerkSyncErr) {
+          console.warn("Clerk client sync note:", clerkSyncErr);
+        }
       }
 
       onProfileUpdated(data.user);
@@ -127,9 +155,18 @@ export function EditProfileModal({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {/* Prominent Red Error Banner */}
           {error && (
-            <div className="rounded-xl bg-purple-50/40 border border-[#6C1C74]/20 p-2.5 text-xs text-[#6C1C74]">
-              {error}
+            <div className="flex items-start gap-2.5 rounded-xl border-2 border-red-500 bg-red-50 p-3 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-red-400/30 animate-in fade-in">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+              <div className="flex-1 leading-relaxed">{error}</div>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-800 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
 

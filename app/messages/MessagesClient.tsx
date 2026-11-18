@@ -18,8 +18,11 @@ import {
   CheckCheck,
   User,
   GraduationCap,
+  AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { SiteHeader } from "../components/SiteHeader";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 
 export interface OtherUser {
   clerkId: string;
@@ -44,6 +47,11 @@ export interface MessageItem {
   _id: string;
   senderId: string;
   recipientId: string;
+  sender?: {
+    name: string;
+    username: string;
+    avatar?: string;
+  };
   text: string;
   mediaUrl?: string;
   read: boolean;
@@ -112,6 +120,7 @@ export function MessagesClient() {
     null
   );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   // New Chat Modal state
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
@@ -204,12 +213,12 @@ export function MessagesClient() {
           router.replace(`/messages?id=${conv._id}`);
           setTimeout(() => inputRef.current?.focus(), 150);
         } else {
-          const errData = await res.json();
-          alert(errData.error || "Could not open conversation.");
+          const errData = await res.json().catch(() => ({}));
+          setChatError(errData.error || "Could not open conversation.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error creating/opening conversation:", err);
-        alert("Failed to start conversation.");
+        setChatError(err?.message || "Failed to start conversation.");
       }
     },
     [fetchMessages, router]
@@ -315,14 +324,15 @@ export function MessagesClient() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Only image files are supported in messages.");
+      setChatError("Only image files are supported in messages.");
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("Image size must be less than 10MB.");
+      setChatError("Image size must be less than 10MB.");
       return;
     }
+    setChatError(null);
 
     setAttachedImageFile(file);
     const previewUrl = URL.createObjectURL(file);
@@ -428,17 +438,75 @@ export function MessagesClient() {
           )
         );
       } else {
-        const errData = await res.json();
-        alert(errData.error || "Failed to send message.");
+        const errData = await res.json().catch(() => ({}));
+        setChatError(errData.error || "Failed to send message.");
         // Revert optimistic
         setMessages((prev) => prev.filter((m) => m._id !== optimisticId));
       }
     } catch (err: any) {
       console.error("Send message error:", err);
-      alert(err.message || "Failed to send message.");
+      setChatError(err.message || "Failed to send message.");
     } finally {
       setIsSending(false);
       setIsUploadingImage(false);
+    }
+  };
+
+  // Permanently delete an entire conversation and its messages from database
+  const handleDeleteConversation = async (convId?: string) => {
+    const idToDelete = convId || activeConversation?._id;
+    if (!idToDelete) return;
+
+    if (
+      !confirm(
+        "Are you sure you want to delete this conversation? All messages will be permanently removed from the database."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/conversations/${idToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c._id !== idToDelete));
+        if (activeConversation?._id === idToDelete) {
+          setActiveConversation(null);
+          setMessages([]);
+          router.replace("/messages");
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setChatError(errData.error || "Failed to delete conversation.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setChatError(e?.message || "Failed to delete conversation.");
+    }
+  };
+
+  // Permanently delete a single message from database
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!activeConversation) return;
+    if (!confirm("Are you sure you want to delete this message?")) return;
+
+    try {
+      const res = await fetch(
+        `/api/conversations/${activeConversation._id}/messages?messageId=${messageId}`,
+        { method: "DELETE" }
+      );
+
+      if (res.ok) {
+        setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setChatError(errData.error || "Failed to delete message.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setChatError(e?.message || "Failed to delete message.");
     }
   };
 
@@ -763,15 +831,46 @@ export function MessagesClient() {
                   ) : (
                     messages.map((m, index) => {
                       const isMe = m.senderId === user?.id;
+                      const senderAvatar = isMe
+                        ? user?.imageUrl
+                        : (m.sender?.avatar || activeConversation.otherUser.avatar);
+                      const senderName = isMe
+                        ? (user?.fullName || "You")
+                        : (m.sender?.name || activeConversation.otherUser.name);
+                      const initial = (senderName || "U").charAt(0).toUpperCase();
+
                       return (
                         <div
                           key={m._id || index}
-                          className={`flex flex-col ${
-                            isMe ? "items-end" : "items-start"
+                          className={`flex items-end gap-2 group my-1 ${
+                            isMe ? "justify-end" : "justify-start"
                           }`}
                         >
+                          {/* Profile picture of message sender */}
+                          {!isMe && (
+                            <Link
+                              href={`/profile/${activeConversation.otherUser.username}`}
+                              className="shrink-0 mb-1 rounded-full ring-1 ring-[#6C1C74]/20 hover:ring-[#6C1C74] transition"
+                              title={senderName}
+                            >
+                              <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-100">
+                                {senderAvatar ? (
+                                  <img
+                                    src={senderAvatar}
+                                    alt={senderName}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center bg-[#6C1C74] text-[11px] font-bold text-white">
+                                    {initial}
+                                  </div>
+                                )}
+                              </div>
+                            </Link>
+                          )}
+
                           <div
-                            className={`max-w-[85%] sm:max-w-md lg:max-w-lg rounded-2xl px-4 py-2.5 shadow-2xs ${
+                            className={`max-w-[78%] sm:max-w-md lg:max-w-lg rounded-2xl px-4 py-2.5 shadow-2xs ${
                               isMe
                                 ? "bg-[#6C1C74] text-white rounded-br-xs"
                                 : "bg-white text-gray-900 border border-gray-200/80 rounded-bl-xs"
@@ -819,6 +918,26 @@ export function MessagesClient() {
                               )}
                             </div>
                           </div>
+
+                          {/* Profile picture of logged in user for sent messages */}
+                          {isMe && (
+                            <div
+                              className="shrink-0 mb-1 rounded-full overflow-hidden h-7 w-7 bg-gray-100 ring-1 ring-[#6C1C74]/20"
+                              title="You"
+                            >
+                              {user?.imageUrl ? (
+                                <img
+                                  src={user.imageUrl}
+                                  alt="You"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center bg-[#6C1C74] text-[11px] font-bold text-white">
+                                  {user?.firstName?.[0] || "Y"}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -828,6 +947,23 @@ export function MessagesClient() {
 
                 {/* Message Input Bar */}
                 <div className="p-3 sm:p-4 border-t border-[#6C1C74]/10 bg-white">
+                  {/* Chat Error Highlighted in RED */}
+                  {chatError && (
+                    <div className="mb-3 flex items-center justify-between rounded-xl border-2 border-red-500 bg-red-50 p-2.5 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-red-400/30 animate-in fade-in">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                        <span>{chatError}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setChatError(null)}
+                        className="text-red-500 hover:text-red-800 transition"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* Image Attachment Preview */}
                   {attachedImagePreview && (
                     <div className="mb-2 flex items-center gap-2 p-2 rounded-xl bg-gray-50 border border-gray-200 max-w-sm">

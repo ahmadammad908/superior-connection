@@ -13,8 +13,10 @@ import {
   CornerDownRight,
   X,
   MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import { ReportModal } from "./ReportModal";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 export type CommentItem = {
   _id: string;
@@ -68,6 +70,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState("");
   const [reportCommentId, setReportCommentId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchComments = async () => {
     try {
@@ -92,6 +95,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
     if (!newCommentText.trim()) return;
 
     setSubmitting(true);
+    setError(null);
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
@@ -126,9 +130,13 @@ export function CommentSection({ postId }: CommentSectionProps) {
 
         setNewCommentText("");
         setReplyTarget(null);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error || "Failed to post comment.");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setError(e?.message || "Failed to post comment.");
     } finally {
       setSubmitting(false);
     }
@@ -258,6 +266,22 @@ export function CommentSection({ postId }: CommentSectionProps) {
       <div className="mt-4">
         {isSignedIn ? (
           <form onSubmit={handlePostComment} className="space-y-2">
+            {error && (
+              <div className="flex items-center justify-between rounded-xl border-2 border-red-500 bg-red-50 p-2.5 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-red-400/30 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                  <span>{error}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="text-red-500 hover:text-red-800 transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
             {replyTarget && (
               <div className="flex items-center justify-between rounded-xl bg-[#6C1C74]/5 px-3 py-1.5 text-xs text-[#6C1C74]">
                 <span>
@@ -364,8 +388,11 @@ export function CommentSection({ postId }: CommentSectionProps) {
                   <div className="rounded-2xl bg-gray-50 p-3 border border-gray-100">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-bold text-gray-900">
-                          {comment.author.name}
+                        <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                          <span>{comment.author.name}</span>
+                          {comment.author.role === "admin" && (
+                            <VerifiedBadge size={13} />
+                          )}
                         </span>
                         <span className="text-[11px] text-gray-400">
                           · {timeAgo(comment.createdAt)}
@@ -494,8 +521,11 @@ export function CommentSection({ postId }: CommentSectionProps) {
                             <div className="rounded-xl bg-purple-50/30 p-2.5 border border-purple-100/50">
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-xs font-bold text-gray-900">
-                                    {reply.author.name}
+                                  <span className="text-xs font-bold text-gray-900 flex items-center gap-1">
+                                    <span>{reply.author.name}</span>
+                                    {reply.author.role === "admin" && (
+                                      <VerifiedBadge size={12} />
+                                    )}
                                   </span>
                                   {reply.replyToName && (
                                     <span className="text-[10px] text-[#6C1C74]">

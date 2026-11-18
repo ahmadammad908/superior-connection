@@ -40,12 +40,20 @@ export async function GET(
 
     const messages = await Message.find({ conversationId: id })
       .sort({ createdAt: 1 })
+      .populate("sender", "name username avatar")
       .lean();
 
     const formatted = messages.map((m: any) => ({
       _id: m._id.toString(),
       senderId: m.senderId,
       recipientId: m.recipientId,
+      sender: m.sender
+        ? {
+            name: (m.sender as any).name || "",
+            username: (m.sender as any).username || "",
+            avatar: (m.sender as any).avatar || "",
+          }
+        : undefined,
       text: m.text,
       mediaUrl: m.mediaUrl || "",
       read: m.read,
@@ -140,6 +148,11 @@ export async function POST(
           _id: message._id.toString(),
           senderId: message.senderId,
           recipientId: message.recipientId,
+          sender: {
+            name: user.name,
+            username: user.username,
+            avatar: user.avatar || "",
+          },
           text: message.text,
           mediaUrl: message.mediaUrl,
           read: false,
@@ -151,5 +164,83 @@ export async function POST(
     );
   } catch (err: any) {
     return handleApiError(err, "Failed to send message.");
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await requireUser(true);
+    await connectDB();
+    const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const messageId = searchParams.get("messageId");
+
+    if (messageId) {
+      // Delete a single message (sender can delete their own message)
+      const msg = await Message.findOne({
+        _id: messageId,
+        conversationId: id,
+        senderId: userId,
+      });
+
+      if (!msg) {
+        return NextResponse.json(
+          { error: "Message not found or you are not authorized to delete it." },
+          { status: 404 }
+        );
+      }
+
+      await Message.deleteOne({ _id: messageId });
+
+      // Refresh last message in conversation
+      const latest = await Message.findOne({ conversationId: id })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      await Conversation.updateOne(
+        { _id: id },
+        {
+          $set: {
+            lastMessage: latest
+              ? latest.text || (latest.mediaUrl ? "[Attached Photo]" : "")
+              : "",
+            lastMessageAt: latest ? latest.createdAt : new Date(),
+          },
+        }
+      );
+
+      return NextResponse.json({
+        message: "Message deleted successfully.",
+        messageId,
+      });
+    }
+
+    // Clear all messages in conversation
+    const conversation = await Conversation.findOne({
+      _id: id,
+      participants: userId,
+    });
+
+    if (!conversation) {
+      return NextResponse.json(
+        { error: "Conversation not found." },
+        { status: 404 }
+      );
+    }
+
+    await Message.deleteMany({ conversationId: id });
+    await Conversation.updateOne(
+      { _id: id },
+      { $set: { lastMessage: "", lastMessageSenderId: "" } }
+    );
+
+    return NextResponse.json({
+      message: "All messages in conversation deleted.",
+    });
+  } catch (err: any) {
+    return handleApiError(err, "Failed to delete message.");
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import { connectDB } from "../../../lib/db";
 import { getCurrentUser, requireUser, handleApiError } from "../../../lib/auth";
 import User from "../../../models/User";
@@ -111,6 +112,28 @@ export async function PUT(req: NextRequest) {
     }
 
     await dbUser.save();
+
+    // Sync with Clerk account so Clerk profile is also updated
+    try {
+      const client = await clerkClient();
+      const clerkPayload: Record<string, any> = {};
+
+      if (name !== undefined) {
+        const parts = dbUser.name.split(" ");
+        clerkPayload.firstName = parts[0] || dbUser.name;
+        clerkPayload.lastName = parts.slice(1).join(" ") || "";
+      }
+
+      if (username !== undefined && dbUser.username) {
+        clerkPayload.username = dbUser.username;
+      }
+
+      if (Object.keys(clerkPayload).length > 0) {
+        await client.users.updateUser(userId, clerkPayload);
+      }
+    } catch (clerkErr: any) {
+      console.warn("Clerk server sync warning:", clerkErr?.message);
+    }
 
     return NextResponse.json({
       message: "Profile updated successfully.",

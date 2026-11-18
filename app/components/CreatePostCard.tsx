@@ -350,17 +350,17 @@ export function CreatePostCard({ onPostCreated, isAdmin = false }: CreatePostCar
           </div>
         )}
 
-        {/* ── Error Banner ── */}
+        {/* ── Error Banner (Highlighted in Red) ── */}
         {error && (
-          <div className="mx-4 mb-3 sm:mx-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
-            <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <span>{error}</span>
+          <div className="mx-4 mb-3 sm:mx-5 flex items-start gap-2.5 rounded-xl border-2 border-red-500 bg-red-50 px-3.5 py-3 text-xs font-semibold text-red-700 shadow-sm ring-1 ring-red-400/30 animate-in fade-in">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+            <span className="flex-1 leading-relaxed">{error}</span>
             <button
               type="button"
               onClick={() => setError(null)}
-              className="ml-auto shrink-0 text-red-400 hover:text-red-700"
+              className="ml-auto shrink-0 text-red-500 hover:text-red-800 transition"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}

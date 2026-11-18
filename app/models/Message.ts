@@ -32,6 +32,8 @@ const MessageSchema = new Schema<IMessage>(
 );
 
 MessageSchema.index({ conversationId: 1, createdAt: 1 });
+MessageSchema.index({ conversationId: 1, recipientId: 1, read: 1 });
+MessageSchema.index({ senderId: 1, createdAt: -1 });
 
 if (models.Message) {
   delete models.Message;

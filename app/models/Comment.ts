@@ -44,7 +44,8 @@ const CommentSchema = new Schema<IComment>(
   { timestamps: true }
 );
 
-CommentSchema.index({ postId: 1, createdAt: 1 });
+CommentSchema.index({ postId: 1, isDeleted: 1, createdAt: 1 });
+CommentSchema.index({ authorId: 1, createdAt: -1 });
 
 if (models.Comment) {
   delete models.Comment;
